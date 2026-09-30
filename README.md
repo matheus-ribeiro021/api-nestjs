@@ -1,6 +1,6 @@
-# API Alunos e Professores — NestJS
+# API Alunos e Professores — NestJS e MySQL
 
-API RESTful desenvolvida durante a Unidade Curricular de **Programação Web 2 — Senac RJ**, utilizando **NestJS** e **TypeScript** para gerenciamento de alunos e professores.
+API RESTful desenvolvida durante a Unidade Curricular de **Programação Web 2 — Senac RJ**, utilizando **NestJS**, **TypeScript** e **MySQL** para gerenciamento de alunos e professores.
 
 ---
 
@@ -15,13 +15,24 @@ A aplicação permite realizar operações de:
 - atualização;
 - exclusão.
 
-Nesta etapa do projeto, os dados são armazenados temporariamente **em memória**, sem utilização de banco de dados.
+Nesta etapa do projeto, o recurso de **alunos**, que anteriormente utilizava dados armazenados em memória, passou a utilizar persistência real em banco de dados **MySQL**.
+
+Também foi adicionado o campo:
+
+```text
+email
+```
+
+ao modelo de aluno.
 
 Cada aluno possui os seguintes dados:
 
 - `id`
 - `nome`
+- `email`
 - `curso`
+
+O recurso de professores continua utilizando dados armazenados em memória.
 
 Cada professor possui:
 
@@ -29,14 +40,18 @@ Cada professor possui:
 - `nome`
 - `disciplina`
 
-A aplicação foi organizada utilizando a estrutura:
+A arquitetura do recurso de alunos passou a utilizar:
 
 ```text
 Controller
     ↓
 Service
     ↓
-Dados em memória
+Repository
+    ↓
+DatabaseService
+    ↓
+MySQL
 ```
 
 ---
@@ -51,7 +66,12 @@ A API possui as seguintes funcionalidades:
 - Listagem de alunos;
 - Consulta de aluno por ID;
 - Atualização de alunos;
-- Exclusão de alunos.
+- Exclusão de alunos;
+- Persistência dos dados em MySQL;
+- Campo `email` na entidade aluno;
+- Utilização de Repository;
+- Utilização de pool de conexões;
+- Configuração do banco através de variáveis de ambiente.
 
 ### Professores
 
@@ -59,9 +79,8 @@ A API possui as seguintes funcionalidades:
 - Listagem de professores;
 - Consulta de professor por ID;
 - Atualização de professores;
-- Exclusão de professores.
-
-Nesta etapa, os dados são armazenados em arrays dentro dos Services.
+- Exclusão de professores;
+- Armazenamento temporário em memória.
 
 ---
 
@@ -70,6 +89,9 @@ Nesta etapa, os dados são armazenados em arrays dentro dos Services.
 - Node.js
 - NestJS
 - TypeScript
+- MySQL
+- mysql2
+- @nestjs/config
 - npm
 - Git
 - GitHub
@@ -78,7 +100,7 @@ Nesta etapa, os dados são armazenados em arrays dentro dos Services.
 
 ## 4. Arquitetura e Organização do Projeto
 
-A aplicação utiliza uma organização baseada na arquitetura do NestJS:
+O recurso de alunos utiliza uma arquitetura em camadas:
 
 ```text
 Cliente
@@ -87,18 +109,36 @@ Controller
     ↓
 Service
     ↓
-Dados em memória
+Repository
+    ↓
+DatabaseService
+    ↓
+MySQL
 ```
 
 ### Responsabilidades
 
 **Controller** — recebe e trata as requisições HTTP.
 
-**Service** — contém as operações e regras relacionadas aos dados da aplicação.
+**Service** — coordena as operações da aplicação.
 
-**Module** — agrupa e registra Controllers e Services relacionados a determinado recurso.
+**Repository** — realiza o acesso aos dados e contém as instruções SQL.
 
-**Dados em memória** — armazenamento temporário utilizado nesta etapa do projeto.
+**DatabaseService** — gerencia o pool de conexões com o MySQL.
+
+**DatabaseModule** — disponibiliza o `DatabaseService` para outros módulos.
+
+**MySQL** — realiza a persistência dos dados.
+
+O recurso de professores continua utilizando:
+
+```text
+ProfessoresController
+        ↓
+ProfessoresService
+        ↓
+Dados em memória
+```
 
 ### Estrutura principal
 
@@ -107,10 +147,15 @@ src/
 ├── app.module.ts
 ├── main.ts
 │
+├── database/
+│   ├── database.module.ts
+│   └── database.service.ts
+│
 ├── alunos/
 │   ├── alunos.module.ts
 │   ├── alunos.controller.ts
-│   └── alunos.service.ts
+│   ├── alunos.service.ts
+│   └── alunos.repository.ts
 │
 └── professores/
     ├── professores.module.ts
@@ -126,7 +171,8 @@ Antes de executar o projeto, é necessário possuir:
 
 - Node.js;
 - npm;
-- Git.
+- Git;
+- MySQL.
 
 ---
 
@@ -152,7 +198,79 @@ npm install
 
 ---
 
-## 7. Execução do Projeto
+## 7. Configuração das Variáveis de Ambiente
+
+Crie um arquivo `.env` na raiz do projeto:
+
+```env
+PORT=3000
+
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=sua_senha
+DB_NAME=escola
+```
+
+O arquivo `.env` contém informações específicas do ambiente e não deve ser enviado ao repositório.
+
+Ele deve estar incluído no `.gitignore`:
+
+```text
+.env
+```
+
+O `ConfigModule` é utilizado para carregar as variáveis de ambiente.
+
+O `ConfigService` permite acessar essas configurações dentro da aplicação.
+
+---
+
+## 8. Banco de Dados
+
+Crie o banco:
+
+```sql
+CREATE DATABASE escola;
+```
+
+Selecione o banco:
+
+```sql
+USE escola;
+```
+
+Crie a tabela de alunos:
+
+```sql
+CREATE TABLE alunos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    email VARCHAR(150),
+    curso VARCHAR(100) NOT NULL
+);
+```
+
+Caso a tabela já tenha sido criada anteriormente sem o campo `email`, utilize:
+
+```sql
+ALTER TABLE alunos
+ADD COLUMN email VARCHAR(150);
+```
+
+A estrutura utilizada pela aplicação é:
+
+```text
+Aluno
+├── id
+├── nome
+├── email
+└── curso
+```
+
+---
+
+## 9. Execução do Projeto
 
 ### Ambiente de desenvolvimento
 
@@ -182,38 +300,35 @@ npm run start:prod
 
 ---
 
-## 8. Recurso Alunos
+## 10. Recurso Alunos
 
-O recurso de alunos foi implementado através de:
+O recurso de alunos foi atualizado para utilizar persistência em banco de dados.
+
+O fluxo passou a ser:
 
 ```text
-AlunosModule
-      ↓
 AlunosController
       ↓
 AlunosService
       ↓
-Dados em memória
+AlunosRepository
+      ↓
+DatabaseService
+      ↓
+MySQL
 ```
 
-O `AlunosModule` é responsável por registrar:
+O `AlunosController` recebe as requisições HTTP.
 
-```text
-AlunosController
-AlunosService
-```
+O `AlunosService` coordena as operações da aplicação.
 
-O `AlunosController` recebe as requisições relacionadas à rota:
+O `AlunosRepository` realiza as consultas SQL.
 
-```text
-/alunos
-```
-
-O `AlunosService` realiza as operações sobre os dados armazenados em memória.
+O `DatabaseService` fornece o pool de conexões com o MySQL.
 
 ---
 
-## 9. Endpoints de Alunos
+## 11. Endpoints de Alunos
 
 | Método | Endpoint | Descrição |
 | ------ | -------- | --------- |
@@ -225,7 +340,7 @@ O `AlunosService` realiza as operações sobre os dados armazenados em memória.
 
 ---
 
-## 10. Exemplos de Requisição — Alunos
+## 12. Exemplos de Requisição — Alunos
 
 ### Criar aluno
 
@@ -237,6 +352,7 @@ Content-Type: application/json
 ```json
 {
   "nome": "Maria",
+  "email": "maria@email.com",
   "curso": "Engenharia de Software"
 }
 ```
@@ -245,8 +361,9 @@ Exemplo de resposta:
 
 ```json
 {
-  "id": 3,
+  "id": 1,
   "nome": "Maria",
+  "email": "maria@email.com",
   "curso": "Engenharia de Software"
 }
 ```
@@ -260,225 +377,191 @@ Content-Type: application/json
 
 ```json
 {
-  "nome": "Ana Silva",
-  "curso": "Sistemas de Informação"
+  "nome": "Maria Silva",
+  "email": "maria.silva@email.com",
+  "curso": "Análise e Desenvolvimento de Sistemas"
 }
 ```
 
 ---
 
-## 11. Recurso Professores
+## 13. Repository de Alunos
 
-O recurso de professores foi desenvolvido seguindo a mesma organização utilizada no recurso de alunos:
+A camada `Repository` foi adicionada para separar o acesso aos dados das regras da aplicação.
 
-```text
-ProfessoresModule
-        ↓
-ProfessoresController
-        ↓
-ProfessoresService
-        ↓
-Dados em memória
-```
-
-O `ProfessoresModule` é responsável por registrar:
-
-```text
-ProfessoresController
-ProfessoresService
-```
-
-O `ProfessoresController` recebe as requisições relacionadas à rota:
-
-```text
-/professores
-```
-
-O `ProfessoresService` realiza as operações sobre os professores armazenados em memória.
-
----
-
-## 12. Endpoints de Professores
-
-| Método | Endpoint | Descrição |
-| ------ | -------- | --------- |
-| GET | `/professores` | Lista todos os professores |
-| GET | `/professores/:id` | Busca um professor pelo ID |
-| POST | `/professores` | Cadastra um novo professor |
-| PUT | `/professores/:id` | Atualiza um professor |
-| DELETE | `/professores/:id` | Exclui um professor |
-
----
-
-## 13. Exemplos de Requisição — Professores
-
-### Criar professor
-
-```http
-POST /professores
-Content-Type: application/json
-```
-
-```json
-{
-  "nome": "João",
-  "disciplina": "Banco de Dados"
-}
-```
-
-Exemplo de resposta:
-
-```json
-{
-  "id": 3,
-  "nome": "João",
-  "disciplina": "Banco de Dados"
-}
-```
-
-### Atualizar professor
-
-```http
-PUT /professores/1
-Content-Type: application/json
-```
-
-```json
-{
-  "nome": "Bruno Silva",
-  "disciplina": "Programação Web"
-}
-```
-
----
-
-## 14. Dados em Memória
-
-Nesta etapa, a aplicação ainda não utiliza banco de dados.
-
-Os dados são armazenados diretamente nos Services através de arrays.
-
-### Alunos
+O fluxo é:
 
 ```text
 AlunosService
-     ↓
-Array de alunos
+      ↓
+AlunosRepository
+      ↓
+DatabaseService
+      ↓
+MySQL
 ```
 
-Exemplo:
-
-```ts
-private alunos = [
-  {
-    id: 1,
-    nome: 'Ana',
-    curso: 'Sistemas de Informação',
-  },
-  {
-    id: 2,
-    nome: 'Carlos',
-    curso: 'Ciência da Computação',
-  },
-];
-```
-
-### Professores
+O `AlunosRepository` implementa operações como:
 
 ```text
-ProfessoresService
-     ↓
-Array de professores
+SELECT
+INSERT
+UPDATE
+DELETE
 ```
 
-Exemplo:
+O campo `email` também passou a fazer parte das operações de:
 
-```ts
-private professores = [
-  {
-    id: 1,
-    nome: 'Bruno',
-    disciplina: 'Programação Web',
-  },
-  {
-    id: 2,
-    nome: 'Filipe',
-    disciplina: 'Gestão e Governança de TI',
-  },
-];
+```text
+SELECT
+INSERT
+UPDATE
 ```
-
-Como os dados são mantidos somente em memória, alterações realizadas durante a execução são perdidas quando a aplicação é reiniciada.
 
 ---
 
-## 15. Injeção de Dependência
+## 14. Persistência com MySQL
 
-O NestJS é responsável pela criação e injeção das dependências utilizadas pela aplicação.
+A aplicação utiliza o pacote:
 
-No recurso de alunos:
+```text
+mysql2
+```
+
+para comunicação com o banco de dados.
+
+O acesso ao banco é realizado através de um **pool de conexões**.
+
+O pool permite reutilizar conexões em vez de criar uma nova conexão para cada requisição.
+
+A arquitetura é:
+
+```text
+AlunosRepository
+       ↓
+DatabaseService
+       ↓
+Connection Pool
+       ↓
+MySQL
+```
+
+O limite configurado para o pool é de:
+
+```text
+10 conexões
+```
+
+---
+
+## 15. DatabaseModule e DatabaseService
+
+O `DatabaseModule` é responsável por registrar e exportar:
+
+```text
+DatabaseService
+```
+
+O `DatabaseService` cria e gerencia o pool de conexões.
+
+Ele utiliza o `ConfigService` para obter informações como:
+
+```text
+DB_HOST
+DB_PORT
+DB_USER
+DB_PASSWORD
+DB_NAME
+```
+
+O `DatabaseModule` exporta o `DatabaseService` para que outros módulos possam utilizá-lo.
+
+---
+
+## 16. Injeção de Dependência
+
+O NestJS é responsável pela criação e injeção das dependências da aplicação.
+
+No recurso de alunos, o fluxo utilizado é:
 
 ```text
 AlunosController
       ↓
 AlunosService
-```
-
-No recurso de professores:
-
-```text
-ProfessoresController
       ↓
-ProfessoresService
+AlunosRepository
+      ↓
+DatabaseService
 ```
 
-Os Services são injetados nos Controllers através do construtor.
+O `AlunosModule` registra:
 
-Exemplo:
-
-```ts
-constructor(
-  private readonly alunosService: AlunosService,
-) {}
+```text
+AlunosController
+AlunosService
+AlunosRepository
 ```
 
-Dessa forma, o Controller não precisa criar manualmente uma instância do Service.
+e importa:
+
+```text
+DatabaseModule
+```
+
+Dessa forma, o `AlunosRepository` pode receber o `DatabaseService` através de injeção de dependência.
 
 ---
 
-## 16. Decorators Utilizados
+## 17. ConfigModule e ConfigService
 
-Durante o desenvolvimento foram utilizados decorators do NestJS como:
-
-```text
-@Module()
-@Controller()
-@Injectable()
-@Get()
-@Post()
-@Put()
-@Delete()
-@Body()
-@Param()
-```
-
-Também foi utilizado:
+O projeto utiliza:
 
 ```text
-ParseIntPipe
+ConfigModule
+ConfigService
 ```
 
-para transformar parâmetros de rota em números.
-
-Exemplo:
+O `ConfigModule` é configurado globalmente através de:
 
 ```ts
-@Param('id', ParseIntPipe) id: number
+ConfigModule.forRoot({
+  isGlobal: true,
+})
+```
+
+O `ConfigService` é utilizado pelo `DatabaseService` para acessar as variáveis do arquivo `.env`.
+
+Isso evita deixar configurações sensíveis diretamente no código-fonte.
+
+---
+
+## 18. Encerramento do Pool
+
+O `DatabaseService` implementa o lifecycle hook:
+
+```text
+OnModuleDestroy
+```
+
+Quando a aplicação é encerrada adequadamente, o pool de conexões também é finalizado.
+
+O projeto utiliza:
+
+```ts
+app.enableShutdownHooks();
+```
+
+permitindo que o NestJS execute os lifecycle hooks durante o encerramento da aplicação.
+
+O encerramento do pool é realizado através de:
+
+```ts
+await this.pool.end();
 ```
 
 ---
 
-## 17. Modelo de Dados
+## 19. Modelo de Dados
 
 ### Aluno
 
@@ -486,6 +569,7 @@ Exemplo:
 Aluno
 ├── id: number
 ├── nome: string
+├── email: string
 └── curso: string
 ```
 
@@ -495,8 +579,19 @@ Representação:
 {
   id: number;
   nome: string;
+  email: string;
   curso: string;
 }
+```
+
+No banco MySQL:
+
+```text
+alunos
+├── id INT AUTO_INCREMENT PRIMARY KEY
+├── nome VARCHAR(100) NOT NULL
+├── email VARCHAR(150)
+└── curso VARCHAR(100) NOT NULL
 ```
 
 ### Professor
@@ -508,75 +603,183 @@ Professor
 └── disciplina: string
 ```
 
-Representação:
-
-```ts
-{
-  id: number;
-  nome: string;
-  disciplina: string;
-}
-```
+O recurso de professores permanece utilizando dados em memória nesta etapa.
 
 ---
 
-## 18. Verificação do Projeto
+## 20. Recurso Professores
 
-Após a implementação dos recursos de alunos e professores, foi realizada a compilação do projeto através do comando:
+O recurso de professores permanece com a arquitetura:
+
+```text
+ProfessoresController
+        ↓
+ProfessoresService
+        ↓
+Dados em memória
+```
+
+Os endpoints continuam disponíveis:
+
+| Método | Endpoint | Descrição |
+| ------ | -------- | --------- |
+| GET | `/professores` | Lista todos os professores |
+| GET | `/professores/:id` | Busca um professor pelo ID |
+| POST | `/professores` | Cadastra um novo professor |
+| PUT | `/professores/:id` | Atualiza um professor |
+| DELETE | `/professores/:id` | Exclui um professor |
+
+---
+
+## 21. Providers, Imports e Exports
+
+Nesta etapa foram utilizados conceitos importantes do NestJS.
+
+### Providers
+
+Os seguintes componentes são registrados como providers:
+
+```text
+AlunosService
+AlunosRepository
+DatabaseService
+```
+
+### Imports
+
+O `AlunosModule` importa:
+
+```text
+DatabaseModule
+```
+
+O `AppModule` importa:
+
+```text
+ConfigModule
+AlunosModule
+ProfessoresModule
+```
+
+### Exports
+
+O `DatabaseModule` exporta:
+
+```text
+DatabaseService
+```
+
+permitindo sua utilização em outros módulos.
+
+---
+
+## 22. Verificação do Projeto
+
+Após a implementação da persistência com MySQL e do novo campo `email`, foi realizada a compilação do projeto através do comando:
 
 ```bash
 npm run build
 ```
 
-O projeto compilou corretamente, sem erros.
+A compilação permite verificar se a estrutura TypeScript e NestJS está configurada corretamente.
 
-As operações implementadas foram:
-
-```text
-GET
-POST
-PUT
-DELETE
-```
-
-para os recursos:
+As operações implementadas para alunos são:
 
 ```text
-/alunos
-/professores
+POST   /alunos
+GET    /alunos
+GET    /alunos/:id
+PUT    /alunos/:id
+DELETE /alunos/:id
 ```
+
+As operações agora utilizam persistência no MySQL.
 
 ---
 
-## 19. Versionamento e Organização das Branches
+## 23. Extras — Programação Web 2
+
+Nesta etapa foram implementados:
+
+- Persistência de dados com MySQL;
+- Campo `email` na entidade aluno;
+- Camada `Repository`;
+- `AlunosRepository`;
+- `DatabaseModule`;
+- `DatabaseService`;
+- Pool de conexões;
+- Configuração através de `ConfigModule`;
+- Utilização de `ConfigService`;
+- Variáveis de ambiente;
+- Pacote `mysql2`;
+- Injeção de dependência;
+- Providers;
+- Imports;
+- Exports;
+- Lifecycle hook `OnModuleDestroy`;
+- Encerramento adequado do pool;
+- Atualização das consultas `SELECT`;
+- Atualização da operação `INSERT`;
+- Atualização da operação `UPDATE`;
+- Atualização dos dados recebidos pelo Controller.
+
+---
+
+## 24. Evolução da Arquitetura
+
+Na etapa anterior, a arquitetura utilizada para alunos era:
+
+```text
+Controller
+    ↓
+Service
+    ↓
+Dados em memória
+```
+
+Nesta etapa, a arquitetura passou a ser:
+
+```text
+Controller
+    ↓
+Service
+    ↓
+Repository
+    ↓
+DatabaseService
+    ↓
+MySQL
+```
+
+Dessa forma, os dados dos alunos deixam de existir apenas durante a execução da aplicação e passam a ser armazenados de forma persistente no banco de dados.
+
+---
+
+## 25. Versionamento e Organização das Branches
 
 O projeto utiliza branches para separar as atividades desenvolvidas durante as aulas.
 
 A atividade desta etapa foi desenvolvida na branch:
 
 ```text
+branch_20260925_extra
+```
+
+Esta branch representa uma continuação da atividade anterior desenvolvida na:
+
+```text
 branch_20260922
 ```
 
-Nesta etapa foram implementados:
+Na `branch_20260922`, a aplicação utilizava dados armazenados em memória.
 
-- estrutura inicial com NestJS;
-- utilização de módulos;
-- utilização de Controllers;
-- utilização de Services;
-- injeção de dependência;
-- armazenamento temporário em memória;
-- CRUD de alunos;
-- CRUD de professores;
-- utilização de parâmetros de rota;
-- utilização do `ParseIntPipe`;
-- organização da aplicação por recursos.
+Na `branch_20260925_extra`, o recurso de alunos passou a utilizar persistência com MySQL.
 
 O desenvolvimento utiliza **Git** para controle de versão e **GitHub** como repositório remoto.
 
 ---
 
-## 20. Autor
+## 26. Autor
 
 **Nome:** Matheus Ribeiro Saraiva  
 **Unidade Curricular:** Programação Web 2  
@@ -588,7 +791,7 @@ https://github.com/matheus-ribeiro021
 
 ---
 
-## 21. Licença e Uso Acadêmico
+## 27. Licença e Uso Acadêmico
 
 Projeto desenvolvido para fins acadêmicos na Unidade Curricular de **Programação Web 2 — Senac RJ**.
 

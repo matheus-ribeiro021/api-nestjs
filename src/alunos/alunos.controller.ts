@@ -31,13 +31,16 @@ export class AlunosController {
 
   @Post()
   create(
-    @Body() body: {
+    @Body()
+    body: {
       nome: string;
+      email: string;
       curso: string;
     },
   ) {
     return this.alunosService.create(
       body.nome,
+      body.email,
       body.curso,
     );
   }
@@ -45,14 +48,17 @@ export class AlunosController {
   @Put(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: {
+    @Body()
+    body: {
       nome: string;
+      email: string;
       curso: string;
     },
   ) {
     return this.alunosService.update(
       id,
       body.nome,
+      body.email,
       body.curso,
     );
   }
