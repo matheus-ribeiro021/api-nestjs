@@ -1,114 +1,595 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# API Alunos e Professores — NestJS
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API RESTful desenvolvida durante a Unidade Curricular de **Programação Web 2 — Senac RJ**, utilizando **NestJS** e **TypeScript** para gerenciamento de alunos e professores.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## 1. Descrição
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Este projeto consiste em uma API RESTful desenvolvida com NestJS para gerenciamento de alunos e professores.
 
-## Project setup
+A aplicação permite realizar operações de:
 
-```bash
-$ npm install
+- cadastro;
+- consulta;
+- atualização;
+- exclusão.
+
+Nesta etapa do projeto, os dados são armazenados temporariamente **em memória**, sem utilização de banco de dados.
+
+Cada aluno possui os seguintes dados:
+
+- `id`
+- `nome`
+- `curso`
+
+Cada professor possui:
+
+- `id`
+- `nome`
+- `disciplina`
+
+A aplicação foi organizada utilizando a estrutura:
+
+```text
+Controller
+    ↓
+Service
+    ↓
+Dados em memória
 ```
 
-## Compile and run the project
+---
 
-```bash
-# development
-$ npm run start
+## 2. Funcionalidades
 
-# watch mode
-$ npm run start:dev
+A API possui as seguintes funcionalidades:
 
-# production mode
-$ npm run start:prod
+### Alunos
+
+- Cadastro de alunos;
+- Listagem de alunos;
+- Consulta de aluno por ID;
+- Atualização de alunos;
+- Exclusão de alunos.
+
+### Professores
+
+- Cadastro de professores;
+- Listagem de professores;
+- Consulta de professor por ID;
+- Atualização de professores;
+- Exclusão de professores.
+
+Nesta etapa, os dados são armazenados em arrays dentro dos Services.
+
+---
+
+## 3. Tecnologias Utilizadas
+
+- Node.js
+- NestJS
+- TypeScript
+- npm
+- Git
+- GitHub
+
+---
+
+## 4. Arquitetura e Organização do Projeto
+
+A aplicação utiliza uma organização baseada na arquitetura do NestJS:
+
+```text
+Cliente
+    ↓
+Controller
+    ↓
+Service
+    ↓
+Dados em memória
 ```
 
-## Run tests
+### Responsabilidades
 
-```bash
-# unit tests
-$ npm run test
+**Controller** — recebe e trata as requisições HTTP.
 
-# e2e tests
-$ npm run test:e2e
+**Service** — contém as operações e regras relacionadas aos dados da aplicação.
 
-# test coverage
-$ npm run test:cov
+**Module** — agrupa e registra Controllers e Services relacionados a determinado recurso.
+
+**Dados em memória** — armazenamento temporário utilizado nesta etapa do projeto.
+
+### Estrutura principal
+
+```text
+src/
+├── app.module.ts
+├── main.ts
+│
+├── alunos/
+│   ├── alunos.module.ts
+│   ├── alunos.controller.ts
+│   └── alunos.service.ts
+│
+└── professores/
+    ├── professores.module.ts
+    ├── professores.controller.ts
+    └── professores.service.ts
 ```
 
-## Deployment
+---
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## 5. Pré-requisitos
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Antes de executar o projeto, é necessário possuir:
+
+- Node.js;
+- npm;
+- Git.
+
+---
+
+## 6. Instalação
+
+### 6.1 Clone o repositório
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+git clone https://github.com/matheus-ribeiro021/api-nestjs.git
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 6.2 Acesse a pasta do projeto
 
-## Observability
+```bash
+cd api-nestjs
+```
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
+### 6.3 Instale as dependências
 
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
+```bash
+npm install
+```
 
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
+---
 
-## Resources
+## 7. Execução do Projeto
 
-Check out a few resources that may come in handy when working with NestJS:
+### Ambiente de desenvolvimento
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observer](https://observer.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+npm run start:dev
+```
 
-## Support
+A API estará disponível normalmente em:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```text
+http://localhost:3000
+```
 
-## Stay in touch
+### Build
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Para verificar a compilação do projeto:
 
-## License
+```bash
+npm run build
+```
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+### Ambiente de produção
+
+```bash
+npm run start:prod
+```
+
+---
+
+## 8. Recurso Alunos
+
+O recurso de alunos foi implementado através de:
+
+```text
+AlunosModule
+      ↓
+AlunosController
+      ↓
+AlunosService
+      ↓
+Dados em memória
+```
+
+O `AlunosModule` é responsável por registrar:
+
+```text
+AlunosController
+AlunosService
+```
+
+O `AlunosController` recebe as requisições relacionadas à rota:
+
+```text
+/alunos
+```
+
+O `AlunosService` realiza as operações sobre os dados armazenados em memória.
+
+---
+
+## 9. Endpoints de Alunos
+
+| Método | Endpoint | Descrição |
+| ------ | -------- | --------- |
+| GET | `/alunos` | Lista todos os alunos |
+| GET | `/alunos/:id` | Busca um aluno pelo ID |
+| POST | `/alunos` | Cadastra um novo aluno |
+| PUT | `/alunos/:id` | Atualiza um aluno |
+| DELETE | `/alunos/:id` | Exclui um aluno |
+
+---
+
+## 10. Exemplos de Requisição — Alunos
+
+### Criar aluno
+
+```http
+POST /alunos
+Content-Type: application/json
+```
+
+```json
+{
+  "nome": "Maria",
+  "curso": "Engenharia de Software"
+}
+```
+
+Exemplo de resposta:
+
+```json
+{
+  "id": 3,
+  "nome": "Maria",
+  "curso": "Engenharia de Software"
+}
+```
+
+### Atualizar aluno
+
+```http
+PUT /alunos/1
+Content-Type: application/json
+```
+
+```json
+{
+  "nome": "Ana Silva",
+  "curso": "Sistemas de Informação"
+}
+```
+
+---
+
+## 11. Recurso Professores
+
+O recurso de professores foi desenvolvido seguindo a mesma organização utilizada no recurso de alunos:
+
+```text
+ProfessoresModule
+        ↓
+ProfessoresController
+        ↓
+ProfessoresService
+        ↓
+Dados em memória
+```
+
+O `ProfessoresModule` é responsável por registrar:
+
+```text
+ProfessoresController
+ProfessoresService
+```
+
+O `ProfessoresController` recebe as requisições relacionadas à rota:
+
+```text
+/professores
+```
+
+O `ProfessoresService` realiza as operações sobre os professores armazenados em memória.
+
+---
+
+## 12. Endpoints de Professores
+
+| Método | Endpoint | Descrição |
+| ------ | -------- | --------- |
+| GET | `/professores` | Lista todos os professores |
+| GET | `/professores/:id` | Busca um professor pelo ID |
+| POST | `/professores` | Cadastra um novo professor |
+| PUT | `/professores/:id` | Atualiza um professor |
+| DELETE | `/professores/:id` | Exclui um professor |
+
+---
+
+## 13. Exemplos de Requisição — Professores
+
+### Criar professor
+
+```http
+POST /professores
+Content-Type: application/json
+```
+
+```json
+{
+  "nome": "João",
+  "disciplina": "Banco de Dados"
+}
+```
+
+Exemplo de resposta:
+
+```json
+{
+  "id": 3,
+  "nome": "João",
+  "disciplina": "Banco de Dados"
+}
+```
+
+### Atualizar professor
+
+```http
+PUT /professores/1
+Content-Type: application/json
+```
+
+```json
+{
+  "nome": "Bruno Silva",
+  "disciplina": "Programação Web"
+}
+```
+
+---
+
+## 14. Dados em Memória
+
+Nesta etapa, a aplicação ainda não utiliza banco de dados.
+
+Os dados são armazenados diretamente nos Services através de arrays.
+
+### Alunos
+
+```text
+AlunosService
+     ↓
+Array de alunos
+```
+
+Exemplo:
+
+```ts
+private alunos = [
+  {
+    id: 1,
+    nome: 'Ana',
+    curso: 'Sistemas de Informação',
+  },
+  {
+    id: 2,
+    nome: 'Carlos',
+    curso: 'Ciência da Computação',
+  },
+];
+```
+
+### Professores
+
+```text
+ProfessoresService
+     ↓
+Array de professores
+```
+
+Exemplo:
+
+```ts
+private professores = [
+  {
+    id: 1,
+    nome: 'Bruno',
+    disciplina: 'Programação Web',
+  },
+  {
+    id: 2,
+    nome: 'Filipe',
+    disciplina: 'Gestão e Governança de TI',
+  },
+];
+```
+
+Como os dados são mantidos somente em memória, alterações realizadas durante a execução são perdidas quando a aplicação é reiniciada.
+
+---
+
+## 15. Injeção de Dependência
+
+O NestJS é responsável pela criação e injeção das dependências utilizadas pela aplicação.
+
+No recurso de alunos:
+
+```text
+AlunosController
+      ↓
+AlunosService
+```
+
+No recurso de professores:
+
+```text
+ProfessoresController
+      ↓
+ProfessoresService
+```
+
+Os Services são injetados nos Controllers através do construtor.
+
+Exemplo:
+
+```ts
+constructor(
+  private readonly alunosService: AlunosService,
+) {}
+```
+
+Dessa forma, o Controller não precisa criar manualmente uma instância do Service.
+
+---
+
+## 16. Decorators Utilizados
+
+Durante o desenvolvimento foram utilizados decorators do NestJS como:
+
+```text
+@Module()
+@Controller()
+@Injectable()
+@Get()
+@Post()
+@Put()
+@Delete()
+@Body()
+@Param()
+```
+
+Também foi utilizado:
+
+```text
+ParseIntPipe
+```
+
+para transformar parâmetros de rota em números.
+
+Exemplo:
+
+```ts
+@Param('id', ParseIntPipe) id: number
+```
+
+---
+
+## 17. Modelo de Dados
+
+### Aluno
+
+```text
+Aluno
+├── id: number
+├── nome: string
+└── curso: string
+```
+
+Representação:
+
+```ts
+{
+  id: number;
+  nome: string;
+  curso: string;
+}
+```
+
+### Professor
+
+```text
+Professor
+├── id: number
+├── nome: string
+└── disciplina: string
+```
+
+Representação:
+
+```ts
+{
+  id: number;
+  nome: string;
+  disciplina: string;
+}
+```
+
+---
+
+## 18. Verificação do Projeto
+
+Após a implementação dos recursos de alunos e professores, foi realizada a compilação do projeto através do comando:
+
+```bash
+npm run build
+```
+
+O projeto compilou corretamente, sem erros.
+
+As operações implementadas foram:
+
+```text
+GET
+POST
+PUT
+DELETE
+```
+
+para os recursos:
+
+```text
+/alunos
+/professores
+```
+
+---
+
+## 19. Versionamento e Organização das Branches
+
+O projeto utiliza branches para separar as atividades desenvolvidas durante as aulas.
+
+A atividade desta etapa foi desenvolvida na branch:
+
+```text
+branch_20260922
+```
+
+Nesta etapa foram implementados:
+
+- estrutura inicial com NestJS;
+- utilização de módulos;
+- utilização de Controllers;
+- utilização de Services;
+- injeção de dependência;
+- armazenamento temporário em memória;
+- CRUD de alunos;
+- CRUD de professores;
+- utilização de parâmetros de rota;
+- utilização do `ParseIntPipe`;
+- organização da aplicação por recursos.
+
+O desenvolvimento utiliza **Git** para controle de versão e **GitHub** como repositório remoto.
+
+---
+
+## 20. Autor
+
+**Nome:** Matheus Ribeiro Saraiva  
+**Unidade Curricular:** Programação Web 2  
+**Instituição:** Senac RJ
+
+GitHub:
+
+https://github.com/matheus-ribeiro021
+
+---
+
+## 21. Licença e Uso Acadêmico
+
+Projeto desenvolvido para fins acadêmicos na Unidade Curricular de **Programação Web 2 — Senac RJ**.
+
+O código poderá ser utilizado para avaliação e acompanhamento acadêmico durante o curso.git add .
