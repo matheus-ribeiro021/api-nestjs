@@ -1,47 +1,82 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+
 import { AlunosRepository } from './alunos.repository.js';
+
+import { CreateAlunoDto } from './dto/create-aluno.dto.js';
+import { UpdateAlunoDto } from './dto/update-aluno.dto.js';
+import { PatchAlunoDto } from './dto/patch-aluno.dto.js';
 
 @Injectable()
 export class AlunosService {
   constructor(
-    private readonly alunosRepository: AlunosRepository,
+    private readonly alunosRepository:
+      AlunosRepository,
   ) {}
 
   findAll() {
     return this.alunosRepository.findAll();
   }
 
-  findById(id: number) {
-    return this.alunosRepository.findById(id);
+  async findById(id: number) {
+    const aluno =
+      await this.alunosRepository.findById(id);
+
+    if (!aluno) {
+      throw new NotFoundException(
+        'Aluno não encontrado',
+      );
+    }
+
+    return aluno;
   }
 
-  create(
-    nome: string,
-    email: string,
-    curso: string,
-  ) {
+  create(data: CreateAlunoDto) {
     return this.alunosRepository.create(
-      nome,
-      email,
-      curso,
+      data.nome,
+      data.email,
+      data.curso,
     );
   }
 
-  update(
+  async update(
     id: number,
-    nome: string,
-    email: string,
-    curso: string,
+    data: UpdateAlunoDto,
   ) {
-    return this.alunosRepository.update(
+    await this.findById(id);
+
+    await this.alunosRepository.update(
       id,
-      nome,
-      email,
-      curso,
+      data.nome,
+      data.email,
+      data.curso,
     );
+
+    return this.findById(id);
   }
 
-  delete(id: number) {
-    return this.alunosRepository.delete(id);
+  async patch(
+    id: number,
+    data: PatchAlunoDto,
+  ) {
+    const aluno: any =
+      await this.findById(id);
+
+    await this.alunosRepository.update(
+      id,
+      data.nome ?? aluno.nome,
+      data.email ?? aluno.email,
+      data.curso ?? aluno.curso,
+    );
+
+    return this.findById(id);
+  }
+
+  async delete(id: number) {
+    await this.findById(id);
+
+    await this.alunosRepository.delete(id);
   }
 }

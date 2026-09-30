@@ -1,56 +1,50 @@
-# API Alunos e Professores — NestJS e MySQL
+# API Alunos, Professores e Disciplinas — NestJS, Validação e MySQL
 
-API RESTful desenvolvida durante a Unidade Curricular de **Programação Web 2 — Senac RJ**, utilizando **NestJS**, **TypeScript** e **MySQL** para gerenciamento de alunos e professores.
+API RESTful desenvolvida durante a Unidade Curricular de **Programação Web 2 — Senac RJ**, utilizando **NestJS**, **TypeScript** e **MySQL** para gerenciamento de alunos, professores e disciplinas.
 
 ---
 
 ## 1. Descrição
 
-Este projeto consiste em uma API RESTful desenvolvida com NestJS para gerenciamento de alunos e professores.
+Este projeto consiste em uma API RESTful desenvolvida com NestJS.
 
-A aplicação permite realizar operações de:
+A aplicação evoluiu ao longo das atividades da disciplina, passando por diferentes etapas de arquitetura e organização.
 
-- cadastro;
-- consulta;
-- atualização;
-- exclusão.
+Inicialmente, os dados eram armazenados em memória.
 
-Nesta etapa do projeto, o recurso de **alunos**, que anteriormente utilizava dados armazenados em memória, passou a utilizar persistência real em banco de dados **MySQL**.
+Posteriormente, o recurso de alunos passou a utilizar persistência real com MySQL.
 
-Também foi adicionado o campo:
+Nesta etapa, foram adicionados recursos de:
 
-```text
-email
-```
+- DTOs;
+- validação de dados;
+- `ValidationPipe`;
+- `class-validator`;
+- `class-transformer`;
+- tratamento de erros;
+- códigos HTTP adequados;
+- validação de e-mail;
+- atualização parcial com `PATCH`;
+- `PartialType`;
+- novo CRUD de disciplinas.
 
-ao modelo de aluno.
-
-Cada aluno possui os seguintes dados:
-
-- `id`
-- `nome`
-- `email`
-- `curso`
-
-O recurso de professores continua utilizando dados armazenados em memória.
-
-Cada professor possui:
-
-- `id`
-- `nome`
-- `disciplina`
-
-A arquitetura do recurso de alunos passou a utilizar:
+A arquitetura principal passou a ser:
 
 ```text
+Request
+   ↓
+ValidationPipe
+   ↓
+DTO
+   ↓
 Controller
-    ↓
+   ↓
 Service
-    ↓
+   ↓
 Repository
-    ↓
+   ↓
 DatabaseService
-    ↓
+   ↓
 MySQL
 ```
 
@@ -58,29 +52,48 @@ MySQL
 
 ## 2. Funcionalidades
 
-A API possui as seguintes funcionalidades:
-
 ### Alunos
+
+A API permite:
 
 - Cadastro de alunos;
 - Listagem de alunos;
 - Consulta de aluno por ID;
-- Atualização de alunos;
+- Atualização completa de alunos;
+- Atualização parcial de alunos;
 - Exclusão de alunos;
-- Persistência dos dados em MySQL;
-- Campo `email` na entidade aluno;
-- Utilização de Repository;
-- Utilização de pool de conexões;
-- Configuração do banco através de variáveis de ambiente.
+- Persistência em MySQL;
+- Validação do nome;
+- Validação do e-mail;
+- Validação do curso;
+- Tratamento de alunos inexistentes;
+- Retorno de códigos HTTP adequados.
+
+### Disciplinas
+
+A API permite:
+
+- Cadastro de disciplinas;
+- Listagem de disciplinas;
+- Consulta de disciplina por ID;
+- Atualização de disciplinas;
+- Exclusão de disciplinas;
+- Persistência em MySQL;
+- Validação do nome;
+- Validação da carga horária;
+- Tratamento de disciplinas inexistentes.
 
 ### Professores
 
+O recurso de professores continua permitindo:
+
 - Cadastro de professores;
 - Listagem de professores;
-- Consulta de professor por ID;
-- Atualização de professores;
-- Exclusão de professores;
-- Armazenamento temporário em memória.
+- Consulta por ID;
+- Atualização;
+- Exclusão.
+
+Nesta etapa, o recurso de professores continua utilizando dados armazenados em memória.
 
 ---
 
@@ -92,6 +105,9 @@ A API possui as seguintes funcionalidades:
 - MySQL
 - mysql2
 - @nestjs/config
+- @nestjs/mapped-types
+- class-validator
+- class-transformer
 - npm
 - Git
 - GitHub
@@ -100,29 +116,37 @@ A API possui as seguintes funcionalidades:
 
 ## 4. Arquitetura e Organização do Projeto
 
-O recurso de alunos utiliza uma arquitetura em camadas:
+A aplicação utiliza separação de responsabilidades em diferentes camadas:
 
 ```text
 Cliente
-    ↓
+   ↓
+ValidationPipe
+   ↓
+DTO
+   ↓
 Controller
-    ↓
+   ↓
 Service
-    ↓
+   ↓
 Repository
-    ↓
+   ↓
 DatabaseService
-    ↓
+   ↓
 MySQL
 ```
 
 ### Responsabilidades
 
+**ValidationPipe** — executa a validação dos dados recebidos pela aplicação.
+
+**DTO** — define o formato e as regras de validação dos dados recebidos.
+
 **Controller** — recebe e trata as requisições HTTP.
 
-**Service** — coordena as operações da aplicação.
+**Service** — coordena as regras e operações da aplicação.
 
-**Repository** — realiza o acesso aos dados e contém as instruções SQL.
+**Repository** — concentra o acesso aos dados e as instruções SQL.
 
 **DatabaseService** — gerencia o pool de conexões com o MySQL.
 
@@ -130,17 +154,9 @@ MySQL
 
 **MySQL** — realiza a persistência dos dados.
 
-O recurso de professores continua utilizando:
+---
 
-```text
-ProfessoresController
-        ↓
-ProfessoresService
-        ↓
-Dados em memória
-```
-
-### Estrutura principal
+## 5. Estrutura Principal
 
 ```text
 src/
@@ -152,10 +168,25 @@ src/
 │   └── database.service.ts
 │
 ├── alunos/
+│   ├── dto/
+│   │   ├── create-aluno.dto.ts
+│   │   ├── update-aluno.dto.ts
+│   │   └── patch-aluno.dto.ts
+│   │
 │   ├── alunos.module.ts
 │   ├── alunos.controller.ts
 │   ├── alunos.service.ts
 │   └── alunos.repository.ts
+│
+├── disciplinas/
+│   ├── dto/
+│   │   ├── create-disciplina.dto.ts
+│   │   └── update-disciplina.dto.ts
+│   │
+│   ├── disciplinas.module.ts
+│   ├── disciplinas.controller.ts
+│   ├── disciplinas.service.ts
+│   └── disciplinas.repository.ts
 │
 └── professores/
     ├── professores.module.ts
@@ -165,7 +196,7 @@ src/
 
 ---
 
-## 5. Pré-requisitos
+## 6. Pré-requisitos
 
 Antes de executar o projeto, é necessário possuir:
 
@@ -176,21 +207,21 @@ Antes de executar o projeto, é necessário possuir:
 
 ---
 
-## 6. Instalação
+## 7. Instalação
 
-### 6.1 Clone o repositório
+### 7.1 Clone o repositório
 
 ```bash
 git clone https://github.com/matheus-ribeiro021/api-nestjs.git
 ```
 
-### 6.2 Acesse a pasta do projeto
+### 7.2 Acesse a pasta do projeto
 
 ```bash
 cd api-nestjs
 ```
 
-### 6.3 Instale as dependências
+### 7.3 Instale as dependências
 
 ```bash
 npm install
@@ -198,7 +229,35 @@ npm install
 
 ---
 
-## 7. Configuração das Variáveis de Ambiente
+## 8. Dependências de Validação
+
+Nesta etapa foram utilizadas as bibliotecas:
+
+```text
+class-validator
+class-transformer
+@nestjs/mapped-types
+```
+
+Caso seja necessário instalá-las manualmente:
+
+```bash
+npm install class-validator class-transformer @nestjs/mapped-types
+```
+
+O `class-validator` fornece decorators para validação dos dados.
+
+O `class-transformer` auxilia na transformação dos valores recebidos.
+
+O `@nestjs/mapped-types` permite utilizar recursos como:
+
+```text
+PartialType
+```
+
+---
+
+## 9. Configuração das Variáveis de Ambiente
 
 Crie um arquivo `.env` na raiz do projeto:
 
@@ -220,13 +279,18 @@ Ele deve estar incluído no `.gitignore`:
 .env
 ```
 
-O `ConfigModule` é utilizado para carregar as variáveis de ambiente.
+O projeto utiliza:
 
-O `ConfigService` permite acessar essas configurações dentro da aplicação.
+```text
+ConfigModule
+ConfigService
+```
+
+para carregar e acessar as configurações do ambiente.
 
 ---
 
-## 8. Banco de Dados
+## 10. Banco de Dados
 
 Crie o banco:
 
@@ -240,37 +304,37 @@ Selecione o banco:
 USE escola;
 ```
 
-Crie a tabela de alunos:
+### Tabela de alunos
 
 ```sql
 CREATE TABLE alunos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
-    email VARCHAR(150),
+    email VARCHAR(150) NOT NULL,
     curso VARCHAR(100) NOT NULL
 );
 ```
 
-Caso a tabela já tenha sido criada anteriormente sem o campo `email`, utilize:
+Caso a tabela tenha sido criada anteriormente sem o campo `email`:
 
 ```sql
 ALTER TABLE alunos
-ADD COLUMN email VARCHAR(150);
+ADD COLUMN email VARCHAR(150) NOT NULL;
 ```
 
-A estrutura utilizada pela aplicação é:
+### Tabela de disciplinas
 
-```text
-Aluno
-├── id
-├── nome
-├── email
-└── curso
+```sql
+CREATE TABLE disciplinas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    carga_horaria INT NOT NULL
+);
 ```
 
 ---
 
-## 9. Execução do Projeto
+## 11. Execução do Projeto
 
 ### Ambiente de desenvolvimento
 
@@ -286,7 +350,7 @@ http://localhost:3000
 
 ### Build
 
-Para verificar a compilação do projeto:
+Para verificar a compilação:
 
 ```bash
 npm run build
@@ -300,47 +364,298 @@ npm run start:prod
 
 ---
 
-## 10. Recurso Alunos
+## 12. ValidationPipe
 
-O recurso de alunos foi atualizado para utilizar persistência em banco de dados.
-
-O fluxo passou a ser:
+A aplicação utiliza validação global através do:
 
 ```text
-AlunosController
-      ↓
-AlunosService
-      ↓
-AlunosRepository
-      ↓
-DatabaseService
-      ↓
-MySQL
+ValidationPipe
 ```
 
-O `AlunosController` recebe as requisições HTTP.
+A configuração é realizada no `main.ts`:
 
-O `AlunosService` coordena as operações da aplicação.
+```ts
+app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true,
+    transform: true,
+  }),
+);
+```
 
-O `AlunosRepository` realiza as consultas SQL.
+### `whitelist`
 
-O `DatabaseService` fornece o pool de conexões com o MySQL.
+A opção:
+
+```text
+whitelist: true
+```
+
+remove propriedades que não fazem parte dos DTOs.
+
+Por exemplo:
+
+```json
+{
+  "nome": "Maria",
+  "email": "maria@email.com",
+  "curso": "ADS",
+  "admin": true
+}
+```
+
+O campo:
+
+```text
+admin
+```
+
+não pertence ao DTO de aluno e não deve prosseguir como parte dos dados validados.
+
+### `transform`
+
+A opção:
+
+```text
+transform: true
+```
+
+permite que o sistema de pipes realize transformações quando apropriado.
 
 ---
 
-## 11. Endpoints de Alunos
+## 13. DTOs
+
+DTO significa:
+
+```text
+Data Transfer Object
+```
+
+Os DTOs definem o formato dos dados que entram na aplicação.
+
+O fluxo é:
+
+```text
+Cliente
+   ↓
+ValidationPipe
+   ↓
+DTO
+   ↓
+Controller
+```
+
+No recurso de alunos foram criados:
+
+```text
+CreateAlunoDto
+UpdateAlunoDto
+PatchAlunoDto
+```
+
+No recurso de disciplinas:
+
+```text
+CreateDisciplinaDto
+UpdateDisciplinaDto
+```
+
+---
+
+## 14. CreateAlunoDto
+
+O DTO de criação possui regras para:
+
+```text
+nome
+email
+curso
+```
+
+Exemplo:
+
+```ts
+export class CreateAlunoDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  nome: string;
+
+  @IsEmail()
+  @IsNotEmpty()
+  @MaxLength(150)
+  email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  curso: string;
+}
+```
+
+Dessa forma:
+
+- `nome` precisa ser texto;
+- `nome` não pode estar vazio;
+- `email` precisa possuir formato válido;
+- `curso` precisa ser texto;
+- os campos obrigatórios não podem estar vazios.
+
+---
+
+## 15. UpdateAlunoDto
+
+O `UpdateAlunoDto` é utilizado pelo:
+
+```http
+PUT /alunos/:id
+```
+
+Como o `PUT` representa uma atualização completa, os campos são obrigatórios:
+
+```text
+nome
+email
+curso
+```
+
+Exemplo:
+
+```json
+{
+  "nome": "Matheus Ribeiro",
+  "email": "matheus@email.com",
+  "curso": "Análise e Desenvolvimento de Sistemas"
+}
+```
+
+---
+
+## 16. PATCH e PartialType
+
+Também foi implementado:
+
+```http
+PATCH /alunos/:id
+```
+
+O objetivo é permitir atualizações parciais.
+
+Exemplo:
+
+```json
+{
+  "curso": "Engenharia de Software"
+}
+```
+
+Para isso, foi utilizado:
+
+```text
+PartialType
+```
+
+O DTO de atualização parcial é baseado no DTO de criação:
+
+```ts
+export class PatchAlunoDto extends PartialType(
+  CreateAlunoDto,
+) {}
+```
+
+Isso permite reutilizar as regras de validação tornando os campos opcionais.
+
+---
+
+## 17. Validação de E-mail
+
+O campo:
+
+```text
+email
+```
+
+é validado utilizando:
+
+```ts
+@IsEmail()
+```
+
+Exemplo válido:
+
+```json
+{
+  "nome": "João",
+  "email": "joao@email.com",
+  "curso": "ADS"
+}
+```
+
+Exemplo inválido:
+
+```json
+{
+  "nome": "João",
+  "email": "abc",
+  "curso": "ADS"
+}
+```
+
+O segundo exemplo deve resultar em:
+
+```http
+400 Bad Request
+```
+
+---
+
+## 18. Recurso Alunos
+
+O fluxo do recurso de alunos é:
+
+```text
+Request
+   ↓
+ValidationPipe
+   ↓
+DTO
+   ↓
+AlunosController
+   ↓
+AlunosService
+   ↓
+AlunosRepository
+   ↓
+DatabaseService
+   ↓
+MySQL
+```
+
+O `AlunosController` recebe as requisições.
+
+O `AlunosService` coordena as regras da aplicação.
+
+O `AlunosRepository` realiza as operações SQL.
+
+O `DatabaseService` gerencia o pool de conexões.
+
+---
+
+## 19. Endpoints de Alunos
 
 | Método | Endpoint | Descrição |
 | ------ | -------- | --------- |
 | GET | `/alunos` | Lista todos os alunos |
 | GET | `/alunos/:id` | Busca um aluno pelo ID |
 | POST | `/alunos` | Cadastra um novo aluno |
-| PUT | `/alunos/:id` | Atualiza um aluno |
+| PUT | `/alunos/:id` | Atualiza completamente um aluno |
+| PATCH | `/alunos/:id` | Atualiza parcialmente um aluno |
 | DELETE | `/alunos/:id` | Exclui um aluno |
 
 ---
 
-## 12. Exemplos de Requisição — Alunos
+## 20. Exemplos de Requisição — Alunos
 
 ### Criar aluno
 
@@ -351,17 +666,6 @@ Content-Type: application/json
 
 ```json
 {
-  "nome": "Maria",
-  "email": "maria@email.com",
-  "curso": "Engenharia de Software"
-}
-```
-
-Exemplo de resposta:
-
-```json
-{
-  "id": 1,
   "nome": "Maria",
   "email": "maria@email.com",
   "curso": "Engenharia de Software"
@@ -383,11 +687,212 @@ Content-Type: application/json
 }
 ```
 
+### Atualização parcial
+
+```http
+PATCH /alunos/1
+Content-Type: application/json
+```
+
+```json
+{
+  "curso": "Ciência da Computação"
+}
+```
+
 ---
 
-## 13. Repository de Alunos
+## 21. Tratamento de Recursos Inexistentes
 
-A camada `Repository` foi adicionada para separar o acesso aos dados das regras da aplicação.
+O `AlunosService` verifica se um aluno existe antes de determinadas operações.
+
+Quando o aluno não é encontrado, é lançada:
+
+```text
+NotFoundException
+```
+
+Exemplo:
+
+```http
+GET /alunos/999
+```
+
+Resposta esperada:
+
+```http
+404 Not Found
+```
+
+Resposta semelhante a:
+
+```json
+{
+  "statusCode": 404,
+  "message": "Aluno não encontrado",
+  "error": "Not Found"
+}
+```
+
+A mesma lógica é aplicada antes de:
+
+```text
+PUT
+PATCH
+DELETE
+```
+
+---
+
+## 22. IDs Inválidos
+
+Os IDs das rotas utilizam:
+
+```text
+ParseIntPipe
+```
+
+Exemplo:
+
+```ts
+@Param('id', ParseIntPipe) id: number
+```
+
+Se for enviada uma rota como:
+
+```http
+GET /alunos/abc
+```
+
+o valor não pode ser convertido para número.
+
+A aplicação retorna:
+
+```http
+400 Bad Request
+```
+
+antes mesmo de executar a regra do Service.
+
+---
+
+## 23. Códigos HTTP
+
+A API utiliza códigos HTTP adequados para cada operação.
+
+### Listagem
+
+```http
+GET /alunos
+```
+
+Sucesso:
+
+```http
+200 OK
+```
+
+### Consulta
+
+```http
+GET /alunos/1
+```
+
+Sucesso:
+
+```http
+200 OK
+```
+
+Aluno inexistente:
+
+```http
+404 Not Found
+```
+
+### Criação
+
+```http
+POST /alunos
+```
+
+Sucesso:
+
+```http
+201 Created
+```
+
+Dados inválidos:
+
+```http
+400 Bad Request
+```
+
+### Atualização
+
+```http
+PUT /alunos/1
+```
+
+Sucesso:
+
+```http
+200 OK
+```
+
+Dados inválidos:
+
+```http
+400 Bad Request
+```
+
+Aluno inexistente:
+
+```http
+404 Not Found
+```
+
+### Exclusão
+
+```http
+DELETE /alunos/1
+```
+
+Sucesso:
+
+```http
+204 No Content
+```
+
+Aluno inexistente:
+
+```http
+404 Not Found
+```
+
+---
+
+## 24. DELETE com 204 No Content
+
+A exclusão utiliza:
+
+```ts
+@HttpCode(HttpStatus.NO_CONTENT)
+```
+
+Isso faz uma exclusão bem-sucedida retornar:
+
+```http
+204 No Content
+```
+
+Nesse caso, a resposta não possui corpo.
+
+---
+
+## 25. Repository de Alunos
+
+O `AlunosRepository` concentra as operações SQL.
 
 O fluxo é:
 
@@ -401,7 +906,7 @@ DatabaseService
 MySQL
 ```
 
-O `AlunosRepository` implementa operações como:
+O Repository trabalha com:
 
 ```text
 SELECT
@@ -410,7 +915,7 @@ UPDATE
 DELETE
 ```
 
-O campo `email` também passou a fazer parte das operações de:
+O campo `email` faz parte das operações de:
 
 ```text
 SELECT
@@ -418,35 +923,191 @@ INSERT
 UPDATE
 ```
 
+As queries utilizam parâmetros:
+
+```sql
+WHERE id = ?
+```
+
+evitando concatenação direta dos dados recebidos pela API.
+
 ---
 
-## 14. Persistência com MySQL
+## 26. Recurso Disciplinas
 
-A aplicação utiliza o pacote:
+Nesta etapa também foi criado um novo recurso chamado:
+
+```text
+disciplinas
+```
+
+Sua arquitetura é:
+
+```text
+Request
+   ↓
+ValidationPipe
+   ↓
+DTO
+   ↓
+DisciplinasController
+   ↓
+DisciplinasService
+   ↓
+DisciplinasRepository
+   ↓
+DatabaseService
+   ↓
+MySQL
+```
+
+Cada disciplina possui:
+
+```text
+id
+nome
+carga_horaria
+```
+
+---
+
+## 27. Modelo de Disciplina
+
+```text
+Disciplina
+├── id: number
+├── nome: string
+└── carga_horaria: number
+```
+
+No banco:
+
+```text
+disciplinas
+├── id INT AUTO_INCREMENT PRIMARY KEY
+├── nome VARCHAR(100) NOT NULL
+└── carga_horaria INT NOT NULL
+```
+
+---
+
+## 28. DTOs de Disciplinas
+
+Foram criados:
+
+```text
+CreateDisciplinaDto
+UpdateDisciplinaDto
+```
+
+O nome utiliza validações como:
+
+```text
+@IsString()
+@IsNotEmpty()
+@MaxLength(100)
+```
+
+A carga horária utiliza:
+
+```text
+@IsInt()
+@Min(1)
+```
+
+Dessa forma, valores inválidos são rejeitados antes de chegar ao Controller.
+
+---
+
+## 29. Endpoints de Disciplinas
+
+| Método | Endpoint | Descrição |
+| ------ | -------- | --------- |
+| GET | `/disciplinas` | Lista todas as disciplinas |
+| GET | `/disciplinas/:id` | Busca uma disciplina pelo ID |
+| POST | `/disciplinas` | Cadastra uma disciplina |
+| PUT | `/disciplinas/:id` | Atualiza uma disciplina |
+| DELETE | `/disciplinas/:id` | Exclui uma disciplina |
+
+---
+
+## 30. Exemplo de Disciplina
+
+### Criar disciplina
+
+```http
+POST /disciplinas
+Content-Type: application/json
+```
+
+```json
+{
+  "nome": "Programação Web",
+  "carga_horaria": 80
+}
+```
+
+### Atualizar disciplina
+
+```http
+PUT /disciplinas/1
+Content-Type: application/json
+```
+
+```json
+{
+  "nome": "Programação Web 2",
+  "carga_horaria": 100
+}
+```
+
+---
+
+## 31. NotFoundException em Disciplinas
+
+O recurso de disciplinas também verifica a existência de um registro antes de operações como:
+
+```text
+GET por ID
+PUT
+DELETE
+```
+
+Caso a disciplina não exista, a API lança:
+
+```text
+NotFoundException
+```
+
+resultando em:
+
+```http
+404 Not Found
+```
+
+---
+
+## 32. Persistência com MySQL
+
+Os recursos persistidos utilizam:
 
 ```text
 mysql2
 ```
 
-para comunicação com o banco de dados.
-
-O acesso ao banco é realizado através de um **pool de conexões**.
-
-O pool permite reutilizar conexões em vez de criar uma nova conexão para cada requisição.
-
-A arquitetura é:
+O acesso ao banco é realizado através de um pool de conexões.
 
 ```text
-AlunosRepository
-       ↓
+Repository
+    ↓
 DatabaseService
-       ↓
+    ↓
 Connection Pool
-       ↓
+    ↓
 MySQL
 ```
 
-O limite configurado para o pool é de:
+O limite configurado para o pool é:
 
 ```text
 10 conexões
@@ -454,17 +1115,21 @@ O limite configurado para o pool é de:
 
 ---
 
-## 15. DatabaseModule e DatabaseService
+## 33. DatabaseModule e DatabaseService
 
-O `DatabaseModule` é responsável por registrar e exportar:
+O `DatabaseModule` registra e exporta:
 
 ```text
 DatabaseService
 ```
 
-O `DatabaseService` cria e gerencia o pool de conexões.
+O `DatabaseService` utiliza:
 
-Ele utiliza o `ConfigService` para obter informações como:
+```text
+ConfigService
+```
+
+para carregar:
 
 ```text
 DB_HOST
@@ -474,86 +1139,27 @@ DB_PASSWORD
 DB_NAME
 ```
 
-O `DatabaseModule` exporta o `DatabaseService` para que outros módulos possam utilizá-lo.
+O serviço também é responsável pelo gerenciamento do pool de conexões.
 
 ---
 
-## 16. Injeção de Dependência
+## 34. Encerramento do Pool
 
-O NestJS é responsável pela criação e injeção das dependências da aplicação.
-
-No recurso de alunos, o fluxo utilizado é:
-
-```text
-AlunosController
-      ↓
-AlunosService
-      ↓
-AlunosRepository
-      ↓
-DatabaseService
-```
-
-O `AlunosModule` registra:
-
-```text
-AlunosController
-AlunosService
-AlunosRepository
-```
-
-e importa:
-
-```text
-DatabaseModule
-```
-
-Dessa forma, o `AlunosRepository` pode receber o `DatabaseService` através de injeção de dependência.
-
----
-
-## 17. ConfigModule e ConfigService
-
-O projeto utiliza:
-
-```text
-ConfigModule
-ConfigService
-```
-
-O `ConfigModule` é configurado globalmente através de:
-
-```ts
-ConfigModule.forRoot({
-  isGlobal: true,
-})
-```
-
-O `ConfigService` é utilizado pelo `DatabaseService` para acessar as variáveis do arquivo `.env`.
-
-Isso evita deixar configurações sensíveis diretamente no código-fonte.
-
----
-
-## 18. Encerramento do Pool
-
-O `DatabaseService` implementa o lifecycle hook:
+O `DatabaseService` implementa:
 
 ```text
 OnModuleDestroy
 ```
 
-Quando a aplicação é encerrada adequadamente, o pool de conexões também é finalizado.
-
-O projeto utiliza:
+A aplicação utiliza:
 
 ```ts
 app.enableShutdownHooks();
 ```
 
-permitindo que o NestJS execute os lifecycle hooks durante o encerramento da aplicação.
+permitindo que o NestJS execute os lifecycle hooks durante o encerramento.
 
-O encerramento do pool é realizado através de:
+O pool é finalizado utilizando:
 
 ```ts
 await this.pool.end();
@@ -561,7 +1167,7 @@ await this.pool.end();
 
 ---
 
-## 19. Modelo de Dados
+## 35. Modelo de Dados
 
 ### Aluno
 
@@ -573,25 +1179,13 @@ Aluno
 └── curso: string
 ```
 
-Representação:
-
-```ts
-{
-  id: number;
-  nome: string;
-  email: string;
-  curso: string;
-}
-```
-
-No banco MySQL:
+### Disciplina
 
 ```text
-alunos
-├── id INT AUTO_INCREMENT PRIMARY KEY
-├── nome VARCHAR(100) NOT NULL
-├── email VARCHAR(150)
-└── curso VARCHAR(100) NOT NULL
+Disciplina
+├── id: number
+├── nome: string
+└── carga_horaria: number
 ```
 
 ### Professor
@@ -607,9 +1201,9 @@ O recurso de professores permanece utilizando dados em memória nesta etapa.
 
 ---
 
-## 20. Recurso Professores
+## 36. Recurso Professores
 
-O recurso de professores permanece com a arquitetura:
+O recurso de professores permanece com:
 
 ```text
 ProfessoresController
@@ -619,7 +1213,7 @@ ProfessoresService
 Dados em memória
 ```
 
-Os endpoints continuam disponíveis:
+Endpoints:
 
 | Método | Endpoint | Descrição |
 | ------ | -------- | --------- |
@@ -631,113 +1225,98 @@ Os endpoints continuam disponíveis:
 
 ---
 
-## 21. Providers, Imports e Exports
+## 37. Boas Práticas Aplicadas
 
-Nesta etapa foram utilizados conceitos importantes do NestJS.
+Nesta etapa foram aplicadas práticas como:
 
-### Providers
-
-Os seguintes componentes são registrados como providers:
-
-```text
-AlunosService
-AlunosRepository
-DatabaseService
-```
-
-### Imports
-
-O `AlunosModule` importa:
-
-```text
-DatabaseModule
-```
-
-O `AppModule` importa:
-
-```text
-ConfigModule
-AlunosModule
-ProfessoresModule
-```
-
-### Exports
-
-O `DatabaseModule` exporta:
-
-```text
-DatabaseService
-```
-
-permitindo sua utilização em outros módulos.
+- utilização de DTOs;
+- validação em tempo de execução;
+- separação das responsabilidades;
+- SQL concentrado nos Repositories;
+- variáveis de ambiente;
+- não versionamento do `.env`;
+- queries parametrizadas;
+- tratamento de recursos inexistentes;
+- códigos HTTP adequados;
+- injeção de dependência;
+- reutilização das regras através de `PartialType`.
 
 ---
 
-## 22. Verificação do Projeto
+## 38. Fluxo Completo
 
-Após a implementação da persistência com MySQL e do novo campo `email`, foi realizada a compilação do projeto através do comando:
+Para uma requisição como:
+
+```http
+POST /alunos
+```
+
+o fluxo é:
+
+```text
+Cliente
+   ↓
+ValidationPipe
+   ↓
+CreateAlunoDto
+   ↓
+AlunosController
+   ↓
+AlunosService
+   ↓
+AlunosRepository
+   ↓
+DatabaseService
+   ↓
+MySQL
+```
+
+Cada camada possui uma responsabilidade específica.
+
+---
+
+## 39. Verificação do Projeto
+
+Após a implementação dos DTOs, validações, tratamento de erros, `PATCH` e CRUD de disciplinas, foi realizada a compilação através de:
 
 ```bash
 npm run build
 ```
 
-A compilação permite verificar se a estrutura TypeScript e NestJS está configurada corretamente.
+O projeto compilou corretamente, sem erros.
 
-As operações implementadas para alunos são:
+As principais rotas disponíveis nesta etapa são:
 
 ```text
-POST   /alunos
-GET    /alunos
-GET    /alunos/:id
-PUT    /alunos/:id
-DELETE /alunos/:id
+GET     /alunos
+GET     /alunos/:id
+POST    /alunos
+PUT     /alunos/:id
+PATCH   /alunos/:id
+DELETE  /alunos/:id
+
+GET     /disciplinas
+GET     /disciplinas/:id
+POST    /disciplinas
+PUT     /disciplinas/:id
+DELETE  /disciplinas/:id
 ```
 
-As operações agora utilizam persistência no MySQL.
-
 ---
 
-## 23. Extras — Programação Web 2
+## 40. Evolução da Arquitetura
 
-Nesta etapa foram implementados:
-
-- Persistência de dados com MySQL;
-- Campo `email` na entidade aluno;
-- Camada `Repository`;
-- `AlunosRepository`;
-- `DatabaseModule`;
-- `DatabaseService`;
-- Pool de conexões;
-- Configuração através de `ConfigModule`;
-- Utilização de `ConfigService`;
-- Variáveis de ambiente;
-- Pacote `mysql2`;
-- Injeção de dependência;
-- Providers;
-- Imports;
-- Exports;
-- Lifecycle hook `OnModuleDestroy`;
-- Encerramento adequado do pool;
-- Atualização das consultas `SELECT`;
-- Atualização da operação `INSERT`;
-- Atualização da operação `UPDATE`;
-- Atualização dos dados recebidos pelo Controller.
-
----
-
-## 24. Evolução da Arquitetura
-
-Na etapa anterior, a arquitetura utilizada para alunos era:
+Na primeira etapa:
 
 ```text
 Controller
     ↓
 Service
     ↓
-Dados em memória
+Memória
 ```
 
-Nesta etapa, a arquitetura passou a ser:
+Depois:
 
 ```text
 Controller
@@ -751,35 +1330,131 @@ DatabaseService
 MySQL
 ```
 
-Dessa forma, os dados dos alunos deixam de existir apenas durante a execução da aplicação e passam a ser armazenados de forma persistente no banco de dados.
+Nesta etapa:
+
+```text
+Request
+   ↓
+Pipes
+   ↓
+DTO
+   ↓
+Controller
+   ↓
+Service
+   ↓
+Repository
+   ↓
+DatabaseService
+   ↓
+MySQL
+```
+
+A aplicação passou a validar os dados antes de executar as regras da aplicação e acessar o banco.
 
 ---
 
-## 25. Versionamento e Organização das Branches
+## 41. Recursos Implementados Nesta Etapa
+
+Nesta branch foram implementados:
+
+- DTOs;
+- `CreateAlunoDto`;
+- `UpdateAlunoDto`;
+- `PatchAlunoDto`;
+- `CreateDisciplinaDto`;
+- `UpdateDisciplinaDto`;
+- `class-validator`;
+- `class-transformer`;
+- `ValidationPipe`;
+- Validação global;
+- `whitelist`;
+- `transform`;
+- Validação de e-mail;
+- `@IsEmail()`;
+- `@IsString()`;
+- `@IsNotEmpty()`;
+- `@MaxLength()`;
+- `@IsInt()`;
+- `@Min()`;
+- `ParseIntPipe`;
+- `NotFoundException`;
+- Tratamento de `400 Bad Request`;
+- Tratamento de `404 Not Found`;
+- Retorno de `201 Created`;
+- Retorno de `204 No Content`;
+- `PATCH`;
+- `PartialType`;
+- CRUD de disciplinas;
+- Persistência de disciplinas em MySQL;
+- Separação entre Controller, Service, Repository e DatabaseService.
+
+---
+
+## 42. Versionamento e Organização das Branches
 
 O projeto utiliza branches para separar as atividades desenvolvidas durante as aulas.
 
 A atividade desta etapa foi desenvolvida na branch:
 
 ```text
-branch_20260925_extra
+branch_20260929
 ```
 
-Esta branch representa uma continuação da atividade anterior desenvolvida na:
+Ela representa uma evolução das branches anteriores:
 
 ```text
 branch_20260922
+        ↓
+branch_20260925_extra
+        ↓
+branch_20260929
 ```
 
-Na `branch_20260922`, a aplicação utilizava dados armazenados em memória.
+### `branch_20260922`
 
-Na `branch_20260925_extra`, o recurso de alunos passou a utilizar persistência com MySQL.
+Implementação inicial com:
+
+```text
+Controller
+Service
+Dados em memória
+```
+
+### `branch_20260925_extra`
+
+Adição de:
+
+```text
+MySQL
+Repository
+DatabaseService
+Pool de conexões
+Campo email
+```
+
+### `branch_20260929`
+
+Adição de:
+
+```text
+DTOs
+ValidationPipe
+class-validator
+class-transformer
+validação de email
+NotFoundException
+códigos HTTP
+PATCH
+PartialType
+CRUD de disciplinas
+```
 
 O desenvolvimento utiliza **Git** para controle de versão e **GitHub** como repositório remoto.
 
 ---
 
-## 26. Autor
+## 43. Autor
 
 **Nome:** Matheus Ribeiro Saraiva  
 **Unidade Curricular:** Programação Web 2  
@@ -791,8 +1466,8 @@ https://github.com/matheus-ribeiro021
 
 ---
 
-## 27. Licença e Uso Acadêmico
+## 44. Licença e Uso Acadêmico
 
 Projeto desenvolvido para fins acadêmicos na Unidade Curricular de **Programação Web 2 — Senac RJ**.
 
-O código poderá ser utilizado para avaliação e acompanhamento acadêmico durante o curso.git add .
+O código poderá ser utilizado para avaliação e acompanhamento acadêmico durante o curso.
