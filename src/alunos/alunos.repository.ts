@@ -1,119 +1,116 @@
-import { Injectable } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service.js';
+import {
+  Injectable,
+} from '@nestjs/common';
+
+import {
+  PrismaService,
+} from '../prisma/prisma.service.js';
 
 @Injectable()
 export class AlunosRepository {
   constructor(
-    private readonly databaseService:
-      DatabaseService,
+    private readonly prisma:
+      PrismaService,
   ) {}
 
-  async findAll() {
-    const pool =
-      this.databaseService.getPool();
+  findAll(
+    curso?: string,
+    nome?: string,
+    page = 1,
+    limit = 10,
+  ) {
+    const skip =
+      (page - 1) * limit;
 
-    const [rows] = await pool.query(
-      `
-      SELECT
+    return this.prisma.aluno.findMany({
+      where: {
+        ...(curso
+          ? {
+              curso,
+            }
+          : {}),
+
+        ...(nome
+          ? {
+              nome: {
+                contains: nome,
+              },
+            }
+          : {}),
+      },
+
+      orderBy: {
+        id: 'asc',
+      },
+
+      skip,
+      take: limit,
+    });
+  }
+
+  findById(id: number) {
+    return this.prisma.aluno.findUnique({
+      where: {
         id,
-        nome,
-        email,
-        curso
-      FROM alunos
-      `,
-    );
-
-    return rows;
+      },
+    });
   }
 
-  async findById(id: number) {
-    const pool =
-      this.databaseService.getPool();
-
-    const [rows]: any =
-      await pool.query(
-        `
-        SELECT
-          id,
-          nome,
-          email,
-          curso
-        FROM alunos
-        WHERE id = ?
-        `,
-        [id],
-      );
-
-    return rows[0];
-  }
-
-  async create(
+  create(
     nome: string,
     email: string,
     curso: string,
   ) {
-    const pool =
-      this.databaseService.getPool();
-
-    const [result]: any =
-      await pool.query(
-        `
-        INSERT INTO alunos (
-          nome,
-          email,
-          curso
-        )
-        VALUES (?, ?, ?)
-        `,
-        [
-          nome,
-          email,
-          curso,
-        ],
-      );
-
-    return this.findById(
-      result.insertId,
-    );
+    return this.prisma.aluno.create({
+      data: {
+        nome,
+        email,
+        curso,
+      },
+    });
   }
 
-  async update(
+  update(
     id: number,
     nome: string,
     email: string,
     curso: string,
   ) {
-    const pool =
-      this.databaseService.getPool();
+    return this.prisma.aluno.update({
+      where: {
+        id,
+      },
 
-    await pool.query(
-      `
-      UPDATE alunos
-      SET
-        nome = ?,
-        email = ?,
-        curso = ?
-      WHERE id = ?
-      `,
-      [
+      data: {
         nome,
         email,
         curso,
-        id,
-      ],
-    );
+      },
+    });
   }
 
-  async delete(id: number) {
-    const pool =
-      this.databaseService.getPool();
+  patch(
+    id: number,
+    data: {
+      nome?: string;
+      email?: string;
+      curso?: string;
+    },
+  ) {
+    return this.prisma.aluno.update({
+      where: {
+        id,
+      },
 
-    await pool.query(
-      `
-      DELETE FROM alunos
-      WHERE id = ?
-      `,
-      [id],
-    );
+      data,
+    });
+  }
+
+  delete(id: number) {
+    return this.prisma.aluno.delete({
+      where: {
+        id,
+      },
+    });
   }
 }

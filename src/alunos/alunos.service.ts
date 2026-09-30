@@ -3,11 +3,21 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { AlunosRepository } from './alunos.repository.js';
+import {
+  AlunosRepository,
+} from './alunos.repository.js';
 
-import { CreateAlunoDto } from './dto/create-aluno.dto.js';
-import { UpdateAlunoDto } from './dto/update-aluno.dto.js';
-import { PatchAlunoDto } from './dto/patch-aluno.dto.js';
+import {
+  CreateAlunoDto,
+} from './dto/create-aluno.dto.js';
+
+import {
+  UpdateAlunoDto,
+} from './dto/update-aluno.dto.js';
+
+import {
+  PatchAlunoDto,
+} from './dto/patch-aluno.dto.js';
 
 @Injectable()
 export class AlunosService {
@@ -16,13 +26,25 @@ export class AlunosService {
       AlunosRepository,
   ) {}
 
-  findAll() {
-    return this.alunosRepository.findAll();
+  findAll(
+    curso?: string,
+    nome?: string,
+    page = 1,
+    limit = 10,
+  ) {
+    return this.alunosRepository.findAll(
+      curso,
+      nome,
+      page,
+      limit,
+    );
   }
 
   async findById(id: number) {
     const aluno =
-      await this.alunosRepository.findById(id);
+      await this.alunosRepository.findById(
+        id,
+      );
 
     if (!aluno) {
       throw new NotFoundException(
@@ -47,36 +69,31 @@ export class AlunosService {
   ) {
     await this.findById(id);
 
-    await this.alunosRepository.update(
+    return this.alunosRepository.update(
       id,
       data.nome,
       data.email,
       data.curso,
     );
-
-    return this.findById(id);
   }
 
   async patch(
     id: number,
     data: PatchAlunoDto,
   ) {
-    const aluno: any =
-      await this.findById(id);
+    await this.findById(id);
 
-    await this.alunosRepository.update(
+    return this.alunosRepository.patch(
       id,
-      data.nome ?? aluno.nome,
-      data.email ?? aluno.email,
-      data.curso ?? aluno.curso,
+      data,
     );
-
-    return this.findById(id);
   }
 
   async delete(id: number) {
     await this.findById(id);
 
-    await this.alunosRepository.delete(id);
+    await this.alunosRepository.delete(
+      id,
+    );
   }
 }

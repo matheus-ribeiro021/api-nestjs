@@ -1,6 +1,6 @@
-# API Alunos, Professores e Disciplinas — NestJS, Validação e MySQL
+# API Alunos, Professores e Disciplinas — NestJS, Prisma ORM e MySQL
 
-API RESTful desenvolvida durante a Unidade Curricular de **Programação Web 2 — Senac RJ**, utilizando **NestJS**, **TypeScript** e **MySQL** para gerenciamento de alunos, professores e disciplinas.
+API RESTful desenvolvida durante a Unidade Curricular de **Programação Web 2 — Senac RJ**, utilizando **NestJS**, **TypeScript**, **Prisma ORM** e **MySQL** para gerenciamento de alunos, professores e disciplinas.
 
 ---
 
@@ -8,45 +8,49 @@ API RESTful desenvolvida durante a Unidade Curricular de **Programação Web 2 �
 
 Este projeto consiste em uma API RESTful desenvolvida com NestJS.
 
-A aplicação evoluiu ao longo das atividades da disciplina, passando por diferentes etapas de arquitetura e organização.
+A aplicação evoluiu ao longo das atividades da disciplina, passando por diferentes etapas de arquitetura e persistência.
 
 Inicialmente, os dados eram armazenados em memória.
 
-Posteriormente, o recurso de alunos passou a utilizar persistência real com MySQL.
-
-Nesta etapa, foram adicionados recursos de:
-
-- DTOs;
-- validação de dados;
-- `ValidationPipe`;
-- `class-validator`;
-- `class-transformer`;
-- tratamento de erros;
-- códigos HTTP adequados;
-- validação de e-mail;
-- atualização parcial com `PATCH`;
-- `PartialType`;
-- novo CRUD de disciplinas.
-
-A arquitetura principal passou a ser:
+Posteriormente, a aplicação passou a utilizar:
 
 ```text
-Request
-   ↓
-ValidationPipe
-   ↓
-DTO
-   ↓
-Controller
-   ↓
-Service
-   ↓
 Repository
-   ↓
+    ↓
 DatabaseService
-   ↓
+    ↓
+mysql2
+    ↓
 MySQL
 ```
+
+Nesta etapa, a camada de persistência foi migrada de **SQL manual com mysql2** para **Prisma ORM**.
+
+A arquitetura passou a utilizar:
+
+```text
+HTTP Request
+     ↓
+ValidationPipe
+     ↓
+DTO
+     ↓
+Controller
+     ↓
+Service
+     ↓
+Repository
+     ↓
+PrismaService
+     ↓
+Prisma Client
+     ↓
+Driver Adapter
+     ↓
+MySQL
+```
+
+A migração para Prisma permitiu manter as camadas de Controller, Service, Repository, DTOs e validação, alterando principalmente a implementação da persistência.
 
 ---
 
@@ -60,13 +64,16 @@ A API permite:
 - Listagem de alunos;
 - Consulta de aluno por ID;
 - Atualização completa de alunos;
-- Atualização parcial de alunos;
+- Atualização parcial com `PATCH`;
 - Exclusão de alunos;
-- Persistência em MySQL;
+- Persistência com Prisma ORM;
 - Validação do nome;
 - Validação do e-mail;
 - Validação do curso;
 - Tratamento de alunos inexistentes;
+- Filtro por curso;
+- Pesquisa parcial por nome;
+- Paginação;
 - Retorno de códigos HTTP adequados.
 
 ### Disciplinas
@@ -78,8 +85,8 @@ A API permite:
 - Consulta de disciplina por ID;
 - Atualização de disciplinas;
 - Exclusão de disciplinas;
-- Persistência em MySQL;
-- Validação do nome;
+- Persistência com Prisma ORM;
+- Validação de nome;
 - Validação da carga horária;
 - Tratamento de disciplinas inexistentes.
 
@@ -87,13 +94,13 @@ A API permite:
 
 O recurso de professores continua permitindo:
 
-- Cadastro de professores;
-- Listagem de professores;
+- Cadastro;
+- Listagem;
 - Consulta por ID;
 - Atualização;
 - Exclusão.
 
-Nesta etapa, o recurso de professores continua utilizando dados armazenados em memória.
+O recurso de professores permanece utilizando dados armazenados em memória nesta etapa.
 
 ---
 
@@ -103,20 +110,88 @@ Nesta etapa, o recurso de professores continua utilizando dados armazenados em m
 - NestJS
 - TypeScript
 - MySQL
-- mysql2
-- @nestjs/config
-- @nestjs/mapped-types
-- class-validator
-- class-transformer
+- Prisma ORM 7
+- Prisma Client
+- `@prisma/client`
+- `@prisma/adapter-mariadb`
+- `@nestjs/config`
+- `@nestjs/mapped-types`
+- `class-validator`
+- `class-transformer`
+- `dotenv`
 - npm
 - Git
 - GitHub
 
 ---
 
-## 4. Arquitetura e Organização do Projeto
+## 4. Evolução da Persistência
 
-A aplicação utiliza separação de responsabilidades em diferentes camadas:
+Antes da utilização do Prisma:
+
+```text
+Repository
+    ↓
+DatabaseService
+    ↓
+mysql2
+    ↓
+SQL manual
+    ↓
+MySQL
+```
+
+Depois da migração:
+
+```text
+Repository
+    ↓
+PrismaService
+    ↓
+Prisma Client
+    ↓
+Driver Adapter
+    ↓
+MySQL
+```
+
+Com essa alteração, deixaram de ser necessários:
+
+```text
+DatabaseModule
+DatabaseService
+mysql2
+RowDataPacket
+ResultSetHeader
+pool.execute()
+SQL manual para CRUD
+? placeholders
+insertId
+affectedRows
+```
+
+E passaram a fazer parte do projeto:
+
+```text
+Prisma ORM
+Prisma Client
+PrismaService
+PrismaModule
+schema.prisma
+Prisma Models
+Driver Adapter
+db pull
+prisma generate
+migrations
+baseline
+Prisma Studio
+```
+
+---
+
+## 5. Arquitetura Atual
+
+A arquitetura principal da aplicação é:
 
 ```text
 Cliente
@@ -131,72 +206,96 @@ Service
    ↓
 Repository
    ↓
-DatabaseService
+PrismaService
+   ↓
+Prisma Client
+   ↓
+PrismaMariaDb
    ↓
 MySQL
 ```
 
 ### Responsabilidades
 
-**ValidationPipe** — executa a validação dos dados recebidos pela aplicação.
+**ValidationPipe** — valida e transforma os dados recebidos.
 
-**DTO** — define o formato e as regras de validação dos dados recebidos.
+**DTO** — define o formato e as regras de validação das entradas.
 
-**Controller** — recebe e trata as requisições HTTP.
+**Controller** — recebe as requisições HTTP.
 
-**Service** — coordena as regras e operações da aplicação.
+**Service** — coordena regras e operações da aplicação.
 
-**Repository** — concentra o acesso aos dados e as instruções SQL.
+**Repository** — concentra as operações de persistência.
 
-**DatabaseService** — gerencia o pool de conexões com o MySQL.
+**PrismaService** — fornece uma instância compartilhada do Prisma Client.
 
-**DatabaseModule** — disponibiliza o `DatabaseService` para outros módulos.
+**Prisma Client** — disponibiliza uma API TypeScript para acesso aos models.
 
-**MySQL** — realiza a persistência dos dados.
+**Driver Adapter** — realiza a comunicação entre Prisma e MySQL.
+
+**MySQL** — banco de dados utilizado para persistência.
 
 ---
 
-## 5. Estrutura Principal
+## 6. Estrutura Principal
 
 ```text
-src/
-├── app.module.ts
-├── main.ts
+api-nestjs/
 │
-├── database/
-│   ├── database.module.ts
-│   └── database.service.ts
-│
-├── alunos/
-│   ├── dto/
-│   │   ├── create-aluno.dto.ts
-│   │   ├── update-aluno.dto.ts
-│   │   └── patch-aluno.dto.ts
+├── prisma/
+│   ├── migrations/
+│   │   └── 0_init/
+│   │       └── migration.sql
 │   │
-│   ├── alunos.module.ts
-│   ├── alunos.controller.ts
-│   ├── alunos.service.ts
-│   └── alunos.repository.ts
+│   └── schema.prisma
 │
-├── disciplinas/
-│   ├── dto/
-│   │   ├── create-disciplina.dto.ts
-│   │   └── update-disciplina.dto.ts
+├── src/
+│   ├── generated/
+│   │   └── prisma/
+│   │       └── ...
 │   │
-│   ├── disciplinas.module.ts
-│   ├── disciplinas.controller.ts
-│   ├── disciplinas.service.ts
-│   └── disciplinas.repository.ts
+│   ├── prisma/
+│   │   ├── prisma.module.ts
+│   │   └── prisma.service.ts
+│   │
+│   ├── alunos/
+│   │   ├── dto/
+│   │   │   ├── create-aluno.dto.ts
+│   │   │   ├── update-aluno.dto.ts
+│   │   │   └── patch-aluno.dto.ts
+│   │   │
+│   │   ├── alunos.module.ts
+│   │   ├── alunos.controller.ts
+│   │   ├── alunos.service.ts
+│   │   └── alunos.repository.ts
+│   │
+│   ├── disciplinas/
+│   │   ├── dto/
+│   │   │   ├── create-disciplina.dto.ts
+│   │   │   └── update-disciplina.dto.ts
+│   │   │
+│   │   ├── disciplinas.module.ts
+│   │   ├── disciplinas.controller.ts
+│   │   ├── disciplinas.service.ts
+│   │   └── disciplinas.repository.ts
+│   │
+│   ├── professores/
+│   │   ├── professores.module.ts
+│   │   ├── professores.controller.ts
+│   │   └── professores.service.ts
+│   │
+│   ├── app.module.ts
+│   └── main.ts
 │
-└── professores/
-    ├── professores.module.ts
-    ├── professores.controller.ts
-    └── professores.service.ts
+├── .env
+├── package.json
+├── prisma.config.ts
+└── tsconfig.json
 ```
 
 ---
 
-## 6. Pré-requisitos
+## 7. Pré-requisitos
 
 Antes de executar o projeto, é necessário possuir:
 
@@ -207,21 +306,21 @@ Antes de executar o projeto, é necessário possuir:
 
 ---
 
-## 7. Instalação
+## 8. Instalação
 
-### 7.1 Clone o repositório
+### 8.1 Clone o repositório
 
 ```bash
 git clone https://github.com/matheus-ribeiro021/api-nestjs.git
 ```
 
-### 7.2 Acesse a pasta do projeto
+### 8.2 Acesse a pasta
 
 ```bash
 cd api-nestjs
 ```
 
-### 7.3 Instale as dependências
+### 8.3 Instale as dependências
 
 ```bash
 npm install
@@ -229,37 +328,41 @@ npm install
 
 ---
 
-## 8. Dependências de Validação
+## 9. Dependências do Prisma
 
-Nesta etapa foram utilizadas as bibliotecas:
-
-```text
-class-validator
-class-transformer
-@nestjs/mapped-types
-```
-
-Caso seja necessário instalá-las manualmente:
+Nesta etapa foram adicionadas:
 
 ```bash
-npm install class-validator class-transformer @nestjs/mapped-types
+npm install -D prisma@7
 ```
 
-O `class-validator` fornece decorators para validação dos dados.
-
-O `class-transformer` auxilia na transformação dos valores recebidos.
-
-O `@nestjs/mapped-types` permite utilizar recursos como:
-
-```text
-PartialType
+```bash
+npm install @prisma/client@7 @prisma/adapter-mariadb dotenv
 ```
+
+O projeto passou a utilizar Prisma ORM como tecnologia principal de persistência.
 
 ---
 
-## 9. Configuração das Variáveis de Ambiente
+## 10. Configuração ESM
 
-Crie um arquivo `.env` na raiz do projeto:
+O Prisma 7 utiliza a arquitetura baseada em módulos ES.
+
+O `package.json` possui:
+
+```json
+{
+  "type": "module"
+}
+```
+
+Essa configuração permite utilizar corretamente os imports ESM do projeto.
+
+---
+
+## 11. Configuração das Variáveis de Ambiente
+
+O arquivo `.env` possui configurações semelhantes a:
 
 ```env
 PORT=3000
@@ -269,203 +372,651 @@ DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=sua_senha
 DB_NAME=escola
+
+DATABASE_URL="mysql://root:sua_senha@localhost:3306/escola"
 ```
 
-O arquivo `.env` contém informações específicas do ambiente e não deve ser enviado ao repositório.
+A variável:
 
-Ele deve estar incluído no `.gitignore`:
+```text
+DATABASE_URL
+```
+
+é utilizada pelas ferramentas de linha de comando do Prisma.
+
+As variáveis:
+
+```text
+DB_HOST
+DB_PORT
+DB_USER
+DB_PASSWORD
+DB_NAME
+```
+
+são utilizadas pelo `PrismaService` para configurar o driver adapter.
+
+O `.env` não deve ser versionado.
+
+No `.gitignore`:
 
 ```text
 .env
 ```
 
-O projeto utiliza:
-
-```text
-ConfigModule
-ConfigService
-```
-
-para carregar e acessar as configurações do ambiente.
-
 ---
 
-## 10. Banco de Dados
+## 12. Prisma Config
 
-Crie o banco:
-
-```sql
-CREATE DATABASE escola;
-```
-
-Selecione o banco:
-
-```sql
-USE escola;
-```
-
-### Tabela de alunos
-
-```sql
-CREATE TABLE alunos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL,
-    email VARCHAR(150) NOT NULL,
-    curso VARCHAR(100) NOT NULL
-);
-```
-
-Caso a tabela tenha sido criada anteriormente sem o campo `email`:
-
-```sql
-ALTER TABLE alunos
-ADD COLUMN email VARCHAR(150) NOT NULL;
-```
-
-### Tabela de disciplinas
-
-```sql
-CREATE TABLE disciplinas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL,
-    carga_horaria INT NOT NULL
-);
-```
-
----
-
-## 11. Execução do Projeto
-
-### Ambiente de desenvolvimento
-
-```bash
-npm run start:dev
-```
-
-A API estará disponível normalmente em:
+O arquivo:
 
 ```text
-http://localhost:3000
+prisma.config.ts
 ```
 
-### Build
+configura a CLI do Prisma.
 
-Para verificar a compilação:
-
-```bash
-npm run build
-```
-
-### Ambiente de produção
-
-```bash
-npm run start:prod
-```
-
----
-
-## 12. ValidationPipe
-
-A aplicação utiliza validação global através do:
-
-```text
-ValidationPipe
-```
-
-A configuração é realizada no `main.ts`:
+Exemplo:
 
 ```ts
-app.useGlobalPipes(
-  new ValidationPipe({
-    whitelist: true,
-    transform: true,
-  }),
-);
+import 'dotenv/config';
+
+import {
+  defineConfig,
+  env,
+} from 'prisma/config';
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+
+  migrations: {
+    path: 'prisma/migrations',
+  },
+
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+});
 ```
 
-### `whitelist`
+---
 
-A opção:
+## 13. Prisma Schema
+
+O arquivo principal do Prisma é:
 
 ```text
-whitelist: true
+prisma/schema.prisma
 ```
 
-remove propriedades que não fazem parte dos DTOs.
+Ele contém:
 
-Por exemplo:
+- generator;
+- datasource;
+- models;
+- mapeamento entre objetos TypeScript e tabelas MySQL.
 
-```json
-{
-  "nome": "Maria",
-  "email": "maria@email.com",
-  "curso": "ADS",
-  "admin": true
+Exemplo:
+
+```prisma
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
 }
 ```
 
-O campo:
+---
 
-```text
-admin
+## 14. Model Aluno
+
+O model de aluno é:
+
+```prisma
+model Aluno {
+  id    Int    @id @default(autoincrement())
+  nome  String @db.VarChar(100)
+  email String @db.VarChar(150)
+  curso String @db.VarChar(100)
+
+  @@map("alunos")
+}
 ```
 
-não pertence ao DTO de aluno e não deve prosseguir como parte dos dados validados.
-
-### `transform`
-
-A opção:
+O Prisma utiliza:
 
 ```text
-transform: true
+Aluno
 ```
 
-permite que o sistema de pipes realize transformações quando apropriado.
+como nome do model no código.
+
+O:
+
+```prisma
+@@map("alunos")
+```
+
+informa que a tabela real no MySQL continua chamada:
+
+```text
+alunos
+```
+
+Assim:
+
+```text
+prisma.aluno
+      ↓
+Model Aluno
+      ↓
+@@map("alunos")
+      ↓
+Tabela alunos
+```
 
 ---
 
-## 13. DTOs
+## 15. Model Disciplina
 
-DTO significa:
+O model utilizado para disciplinas é:
 
-```text
-Data Transfer Object
+```prisma
+model Disciplina {
+  id           Int    @id @default(autoincrement())
+  nome         String @db.VarChar(100)
+  cargaHoraria Int    @map("carga_horaria")
+
+  @@map("disciplinas")
+}
 ```
 
-Os DTOs definem o formato dos dados que entram na aplicação.
+O campo TypeScript:
+
+```text
+cargaHoraria
+```
+
+é mapeado para a coluna:
+
+```text
+carga_horaria
+```
+
+através de:
+
+```prisma
+@map("carga_horaria")
+```
+
+---
+
+## 16. Introspecção do Banco
+
+Como o banco já existia antes da introdução do Prisma, foi utilizada introspecção.
+
+Comando:
+
+```bash
+npx prisma db pull
+```
 
 O fluxo é:
 
 ```text
-Cliente
+MySQL
    ↓
-ValidationPipe
+prisma db pull
    ↓
-DTO
-   ↓
-Controller
+schema.prisma
 ```
 
-No recurso de alunos foram criados:
+O Prisma analisa:
 
-```text
-CreateAlunoDto
-UpdateAlunoDto
-PatchAlunoDto
+- tabelas;
+- colunas;
+- chaves;
+- tipos.
+
+E atualiza os models do `schema.prisma`.
+
+---
+
+## 17. Gerando o Prisma Client
+
+Após configurar o schema:
+
+```bash
+npx prisma generate
 ```
 
-No recurso de disciplinas:
+O fluxo é:
 
 ```text
-CreateDisciplinaDto
-UpdateDisciplinaDto
+schema.prisma
+      ↓
+prisma generate
+      ↓
+Prisma Client
+      ↓
+src/generated/prisma
+```
+
+Os arquivos gerados automaticamente não devem ser editados manualmente.
+
+Sempre que o schema for modificado, o client deve ser gerado novamente.
+
+---
+
+## 18. PrismaService
+
+O projeto utiliza um provider compartilhado:
+
+```text
+PrismaService
+```
+
+Ele estende:
+
+```text
+PrismaClient
+```
+
+e utiliza:
+
+```text
+PrismaMariaDb
+```
+
+como driver adapter.
+
+Fluxo:
+
+```text
+PrismaService
+      ↓
+PrismaClient
+      ↓
+PrismaMariaDb
+      ↓
+Driver / Pool
+      ↓
+MySQL
+```
+
+Uma única instância do Prisma Client é compartilhada entre os Repositories.
+
+Isso evita a criação desnecessária de múltiplos pools de conexão.
+
+---
+
+## 19. PrismaModule
+
+O `PrismaModule` registra e exporta:
+
+```text
+PrismaService
+```
+
+Exemplo:
+
+```ts
+@Module({
+  providers: [
+    PrismaService,
+  ],
+
+  exports: [
+    PrismaService,
+  ],
+})
+export class PrismaModule {}
+```
+
+Dessa forma, outros módulos podem importar o `PrismaModule` e utilizar o Prisma.
+
+---
+
+## 20. Encerramento das Conexões
+
+O `PrismaService` implementa:
+
+```text
+OnModuleDestroy
+```
+
+Quando a aplicação é encerrada:
+
+```text
+NestJS
+   ↓
+onModuleDestroy()
+   ↓
+prisma.$disconnect()
+   ↓
+conexões encerradas
+```
+
+A aplicação continua utilizando:
+
+```ts
+app.enableShutdownHooks();
+```
+
+O encerramento é realizado através de:
+
+```ts
+await this.$disconnect();
 ```
 
 ---
 
-## 14. CreateAlunoDto
+## 21. Repository de Alunos com Prisma
 
-O DTO de criação possui regras para:
+Antes, o `AlunosRepository` utilizava SQL manual.
+
+Agora utiliza métodos do Prisma Client.
+
+### Listagem
+
+```ts
+this.prisma.aluno.findMany()
+```
+
+### Busca por ID
+
+```ts
+this.prisma.aluno.findUnique({
+  where: {
+    id,
+  },
+});
+```
+
+### Criação
+
+```ts
+this.prisma.aluno.create({
+  data: {
+    nome,
+    email,
+    curso,
+  },
+});
+```
+
+### Atualização
+
+```ts
+this.prisma.aluno.update({
+  where: {
+    id,
+  },
+
+  data: {
+    nome,
+    email,
+    curso,
+  },
+});
+```
+
+### Exclusão
+
+```ts
+this.prisma.aluno.delete({
+  where: {
+    id,
+  },
+});
+```
+
+---
+
+## 22. Comparação SQL × Prisma
+
+### Listar registros
+
+Antes:
+
+```sql
+SELECT *
+FROM alunos;
+```
+
+Agora:
+
+```ts
+prisma.aluno.findMany()
+```
+
+### Buscar por ID
+
+Antes:
+
+```sql
+SELECT *
+FROM alunos
+WHERE id = ?;
+```
+
+Agora:
+
+```ts
+prisma.aluno.findUnique({
+  where: {
+    id,
+  },
+});
+```
+
+### Inserir
+
+Antes:
+
+```sql
+INSERT INTO alunos (
+  nome,
+  email,
+  curso
+)
+VALUES (?, ?, ?);
+```
+
+Agora:
+
+```ts
+prisma.aluno.create({
+  data: {
+    nome,
+    email,
+    curso,
+  },
+});
+```
+
+### Atualizar
+
+Antes:
+
+```sql
+UPDATE alunos
+SET
+  nome = ?,
+  email = ?,
+  curso = ?
+WHERE id = ?;
+```
+
+Agora:
+
+```ts
+prisma.aluno.update({
+  where: {
+    id,
+  },
+
+  data: {
+    nome,
+    email,
+    curso,
+  },
+});
+```
+
+### Excluir
+
+Antes:
+
+```sql
+DELETE FROM alunos
+WHERE id = ?;
+```
+
+Agora:
+
+```ts
+prisma.aluno.delete({
+  where: {
+    id,
+  },
+});
+```
+
+---
+
+## 23. Filtro por Curso
+
+Foi implementada a possibilidade de filtrar alunos por curso.
+
+Exemplo:
+
+```http
+GET /alunos?curso=ADS
+```
+
+No Controller é utilizado:
+
+```ts
+@Query('curso')
+```
+
+No Repository:
+
+```ts
+findMany({
+  where: {
+    curso,
+  },
+});
+```
+
+---
+
+## 24. Pesquisa por Nome
+
+Também é possível pesquisar alunos pelo nome.
+
+Exemplo:
+
+```http
+GET /alunos?nome=Ana
+```
+
+A pesquisa utiliza:
+
+```text
+contains
+```
+
+Exemplo:
+
+```ts
+nome: {
+  contains: nome,
+}
+```
+
+Isso permite retornar alunos cujo nome contenha o texto informado.
+
+---
+
+## 25. Paginação
+
+A listagem de alunos também suporta paginação.
+
+Exemplo:
+
+```http
+GET /alunos?page=1&limit=10
+```
+
+O Prisma utiliza:
+
+```text
+skip
+take
+```
+
+O cálculo é:
+
+```text
+skip = (page - 1) × limit
+```
+
+Exemplo:
+
+```text
+page = 3
+limit = 10
+
+skip = 20
+```
+
+No Repository:
+
+```ts
+findMany({
+  skip,
+  take: limit,
+});
+```
+
+---
+
+## 26. Endpoints de Alunos
+
+| Método | Endpoint | Descrição |
+| ------ | -------- | --------- |
+| GET | `/alunos` | Lista alunos |
+| GET | `/alunos/:id` | Busca aluno por ID |
+| POST | `/alunos` | Cadastra aluno |
+| PUT | `/alunos/:id` | Atualiza aluno |
+| PATCH | `/alunos/:id` | Atualiza parcialmente |
+| DELETE | `/alunos/:id` | Exclui aluno |
+
+Também podem ser utilizados:
+
+```text
+GET /alunos?curso=ADS
+GET /alunos?nome=Ana
+GET /alunos?page=1&limit=10
+```
+
+Os filtros podem ser utilizados na listagem.
+
+---
+
+## 27. DTOs e Validação
+
+A aplicação mantém os DTOs criados anteriormente.
+
+### CreateAlunoDto
+
+Valida:
 
 ```text
 nome
@@ -494,54 +1045,33 @@ export class CreateAlunoDto {
 }
 ```
 
-Dessa forma:
+---
 
-- `nome` precisa ser texto;
-- `nome` não pode estar vazio;
-- `email` precisa possuir formato válido;
-- `curso` precisa ser texto;
-- os campos obrigatórios não podem estar vazios.
+## 28. ValidationPipe
+
+A validação global continua configurada no `main.ts`:
+
+```ts
+app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true,
+    transform: true,
+  }),
+);
+```
+
+Dessa forma, os dados são validados antes de chegar aos Controllers.
 
 ---
 
-## 15. UpdateAlunoDto
+## 29. PATCH e PartialType
 
-O `UpdateAlunoDto` é utilizado pelo:
-
-```http
-PUT /alunos/:id
-```
-
-Como o `PUT` representa uma atualização completa, os campos são obrigatórios:
-
-```text
-nome
-email
-curso
-```
-
-Exemplo:
-
-```json
-{
-  "nome": "Matheus Ribeiro",
-  "email": "matheus@email.com",
-  "curso": "Análise e Desenvolvimento de Sistemas"
-}
-```
-
----
-
-## 16. PATCH e PartialType
-
-Também foi implementado:
+A atualização parcial continua disponível através de:
 
 ```http
 PATCH /alunos/:id
 ```
 
-O objetivo é permitir atualizações parciais.
-
 Exemplo:
 
 ```json
@@ -550,167 +1080,25 @@ Exemplo:
 }
 ```
 
-Para isso, foi utilizado:
+O DTO utiliza:
 
 ```text
 PartialType
 ```
 
-O DTO de atualização parcial é baseado no DTO de criação:
-
-```ts
-export class PatchAlunoDto extends PartialType(
-  CreateAlunoDto,
-) {}
-```
-
-Isso permite reutilizar as regras de validação tornando os campos opcionais.
+permitindo que os campos sejam opcionais durante a atualização parcial.
 
 ---
 
-## 17. Validação de E-mail
+## 30. Tratamento de Erros
 
-O campo:
-
-```text
-email
-```
-
-é validado utilizando:
-
-```ts
-@IsEmail()
-```
-
-Exemplo válido:
-
-```json
-{
-  "nome": "João",
-  "email": "joao@email.com",
-  "curso": "ADS"
-}
-```
-
-Exemplo inválido:
-
-```json
-{
-  "nome": "João",
-  "email": "abc",
-  "curso": "ADS"
-}
-```
-
-O segundo exemplo deve resultar em:
-
-```http
-400 Bad Request
-```
-
----
-
-## 18. Recurso Alunos
-
-O fluxo do recurso de alunos é:
-
-```text
-Request
-   ↓
-ValidationPipe
-   ↓
-DTO
-   ↓
-AlunosController
-   ↓
-AlunosService
-   ↓
-AlunosRepository
-   ↓
-DatabaseService
-   ↓
-MySQL
-```
-
-O `AlunosController` recebe as requisições.
-
-O `AlunosService` coordena as regras da aplicação.
-
-O `AlunosRepository` realiza as operações SQL.
-
-O `DatabaseService` gerencia o pool de conexões.
-
----
-
-## 19. Endpoints de Alunos
-
-| Método | Endpoint | Descrição |
-| ------ | -------- | --------- |
-| GET | `/alunos` | Lista todos os alunos |
-| GET | `/alunos/:id` | Busca um aluno pelo ID |
-| POST | `/alunos` | Cadastra um novo aluno |
-| PUT | `/alunos/:id` | Atualiza completamente um aluno |
-| PATCH | `/alunos/:id` | Atualiza parcialmente um aluno |
-| DELETE | `/alunos/:id` | Exclui um aluno |
-
----
-
-## 20. Exemplos de Requisição — Alunos
-
-### Criar aluno
-
-```http
-POST /alunos
-Content-Type: application/json
-```
-
-```json
-{
-  "nome": "Maria",
-  "email": "maria@email.com",
-  "curso": "Engenharia de Software"
-}
-```
-
-### Atualizar aluno
-
-```http
-PUT /alunos/1
-Content-Type: application/json
-```
-
-```json
-{
-  "nome": "Maria Silva",
-  "email": "maria.silva@email.com",
-  "curso": "Análise e Desenvolvimento de Sistemas"
-}
-```
-
-### Atualização parcial
-
-```http
-PATCH /alunos/1
-Content-Type: application/json
-```
-
-```json
-{
-  "curso": "Ciência da Computação"
-}
-```
-
----
-
-## 21. Tratamento de Recursos Inexistentes
-
-O `AlunosService` verifica se um aluno existe antes de determinadas operações.
-
-Quando o aluno não é encontrado, é lançada:
+O projeto mantém:
 
 ```text
 NotFoundException
 ```
+
+para registros inexistentes.
 
 Exemplo:
 
@@ -718,35 +1106,13 @@ Exemplo:
 GET /alunos/999
 ```
 
-Resposta esperada:
+Resposta:
 
 ```http
 404 Not Found
 ```
 
-Resposta semelhante a:
-
-```json
-{
-  "statusCode": 404,
-  "message": "Aluno não encontrado",
-  "error": "Not Found"
-}
-```
-
-A mesma lógica é aplicada antes de:
-
-```text
-PUT
-PATCH
-DELETE
-```
-
----
-
-## 22. IDs Inválidos
-
-Os IDs das rotas utilizam:
+IDs inválidos continuam sendo tratados por:
 
 ```text
 ParseIntPipe
@@ -754,456 +1120,352 @@ ParseIntPipe
 
 Exemplo:
 
-```ts
-@Param('id', ParseIntPipe) id: number
-```
-
-Se for enviada uma rota como:
-
 ```http
 GET /alunos/abc
 ```
 
-o valor não pode ser convertido para número.
-
-A aplicação retorna:
+Resposta:
 
 ```http
 400 Bad Request
 ```
 
-antes mesmo de executar a regra do Service.
-
 ---
 
-## 23. Códigos HTTP
+## 31. Códigos HTTP
 
-A API utiliza códigos HTTP adequados para cada operação.
+A API utiliza códigos adequados como:
 
-### Listagem
-
-```http
-GET /alunos
-```
-
-Sucesso:
-
-```http
+```text
 200 OK
-```
-
-### Consulta
-
-```http
-GET /alunos/1
-```
-
-Sucesso:
-
-```http
-200 OK
-```
-
-Aluno inexistente:
-
-```http
-404 Not Found
-```
-
-### Criação
-
-```http
-POST /alunos
-```
-
-Sucesso:
-
-```http
 201 Created
-```
-
-Dados inválidos:
-
-```http
-400 Bad Request
-```
-
-### Atualização
-
-```http
-PUT /alunos/1
-```
-
-Sucesso:
-
-```http
-200 OK
-```
-
-Dados inválidos:
-
-```http
-400 Bad Request
-```
-
-Aluno inexistente:
-
-```http
-404 Not Found
-```
-
-### Exclusão
-
-```http
-DELETE /alunos/1
-```
-
-Sucesso:
-
-```http
 204 No Content
-```
-
-Aluno inexistente:
-
-```http
+400 Bad Request
 404 Not Found
 ```
 
----
-
-## 24. DELETE com 204 No Content
-
-A exclusão utiliza:
+O `DELETE` utiliza:
 
 ```ts
 @HttpCode(HttpStatus.NO_CONTENT)
 ```
 
-Isso faz uma exclusão bem-sucedida retornar:
+resultando em:
 
 ```http
 204 No Content
 ```
 
-Nesse caso, a resposta não possui corpo.
-
 ---
 
-## 25. Repository de Alunos
+## 32. Recurso Disciplinas com Prisma
 
-O `AlunosRepository` concentra as operações SQL.
+O recurso de disciplinas também foi adaptado para utilizar Prisma.
 
-O fluxo é:
-
-```text
-AlunosService
-      ↓
-AlunosRepository
-      ↓
-DatabaseService
-      ↓
-MySQL
-```
-
-O Repository trabalha com:
+Fluxo:
 
 ```text
-SELECT
-INSERT
-UPDATE
-DELETE
-```
-
-O campo `email` faz parte das operações de:
-
-```text
-SELECT
-INSERT
-UPDATE
-```
-
-As queries utilizam parâmetros:
-
-```sql
-WHERE id = ?
-```
-
-evitando concatenação direta dos dados recebidos pela API.
-
----
-
-## 26. Recurso Disciplinas
-
-Nesta etapa também foi criado um novo recurso chamado:
-
-```text
-disciplinas
-```
-
-Sua arquitetura é:
-
-```text
-Request
-   ↓
-ValidationPipe
-   ↓
-DTO
-   ↓
 DisciplinasController
-   ↓
+        ↓
 DisciplinasService
-   ↓
+        ↓
 DisciplinasRepository
-   ↓
-DatabaseService
-   ↓
+        ↓
+PrismaService
+        ↓
+Prisma Client
+        ↓
 MySQL
 ```
 
-Cada disciplina possui:
+O Repository utiliza:
 
 ```text
-id
-nome
-carga_horaria
+findMany()
+findUnique()
+create()
+update()
+delete()
 ```
 
 ---
 
-## 27. Modelo de Disciplina
-
-```text
-Disciplina
-├── id: number
-├── nome: string
-└── carga_horaria: number
-```
-
-No banco:
-
-```text
-disciplinas
-├── id INT AUTO_INCREMENT PRIMARY KEY
-├── nome VARCHAR(100) NOT NULL
-└── carga_horaria INT NOT NULL
-```
-
----
-
-## 28. DTOs de Disciplinas
-
-Foram criados:
-
-```text
-CreateDisciplinaDto
-UpdateDisciplinaDto
-```
-
-O nome utiliza validações como:
-
-```text
-@IsString()
-@IsNotEmpty()
-@MaxLength(100)
-```
-
-A carga horária utiliza:
-
-```text
-@IsInt()
-@Min(1)
-```
-
-Dessa forma, valores inválidos são rejeitados antes de chegar ao Controller.
-
----
-
-## 29. Endpoints de Disciplinas
+## 33. Endpoints de Disciplinas
 
 | Método | Endpoint | Descrição |
 | ------ | -------- | --------- |
-| GET | `/disciplinas` | Lista todas as disciplinas |
-| GET | `/disciplinas/:id` | Busca uma disciplina pelo ID |
-| POST | `/disciplinas` | Cadastra uma disciplina |
-| PUT | `/disciplinas/:id` | Atualiza uma disciplina |
-| DELETE | `/disciplinas/:id` | Exclui uma disciplina |
+| GET | `/disciplinas` | Lista disciplinas |
+| GET | `/disciplinas/:id` | Busca disciplina por ID |
+| POST | `/disciplinas` | Cadastra disciplina |
+| PUT | `/disciplinas/:id` | Atualiza disciplina |
+| DELETE | `/disciplinas/:id` | Exclui disciplina |
 
 ---
 
-## 30. Exemplo de Disciplina
+## 34. Modelo de Disciplina
 
-### Criar disciplina
+No Prisma:
 
-```http
-POST /disciplinas
-Content-Type: application/json
-```
+```prisma
+model Disciplina {
+  id           Int    @id @default(autoincrement())
+  nome         String @db.VarChar(100)
+  cargaHoraria Int    @map("carga_horaria")
 
-```json
-{
-  "nome": "Programação Web",
-  "carga_horaria": 80
+  @@map("disciplinas")
 }
 ```
 
-### Atualizar disciplina
-
-```http
-PUT /disciplinas/1
-Content-Type: application/json
-```
-
-```json
-{
-  "nome": "Programação Web 2",
-  "carga_horaria": 100
-}
-```
-
----
-
-## 31. NotFoundException em Disciplinas
-
-O recurso de disciplinas também verifica a existência de um registro antes de operações como:
+No MySQL:
 
 ```text
-GET por ID
-PUT
-DELETE
+disciplinas
+├── id
+├── nome
+└── carga_horaria
 ```
 
-Caso a disciplina não exista, a API lança:
-
-```text
-NotFoundException
-```
-
-resultando em:
-
-```http
-404 Not Found
-```
-
----
-
-## 32. Persistência com MySQL
-
-Os recursos persistidos utilizam:
-
-```text
-mysql2
-```
-
-O acesso ao banco é realizado através de um pool de conexões.
-
-```text
-Repository
-    ↓
-DatabaseService
-    ↓
-Connection Pool
-    ↓
-MySQL
-```
-
-O limite configurado para o pool é:
-
-```text
-10 conexões
-```
-
----
-
-## 33. DatabaseModule e DatabaseService
-
-O `DatabaseModule` registra e exporta:
-
-```text
-DatabaseService
-```
-
-O `DatabaseService` utiliza:
-
-```text
-ConfigService
-```
-
-para carregar:
-
-```text
-DB_HOST
-DB_PORT
-DB_USER
-DB_PASSWORD
-DB_NAME
-```
-
-O serviço também é responsável pelo gerenciamento do pool de conexões.
-
----
-
-## 34. Encerramento do Pool
-
-O `DatabaseService` implementa:
-
-```text
-OnModuleDestroy
-```
-
-A aplicação utiliza:
-
-```ts
-app.enableShutdownHooks();
-```
-
-permitindo que o NestJS execute os lifecycle hooks durante o encerramento.
-
-O pool é finalizado utilizando:
-
-```ts
-await this.pool.end();
-```
-
----
-
-## 35. Modelo de Dados
-
-### Aluno
-
-```text
-Aluno
-├── id: number
-├── nome: string
-├── email: string
-└── curso: string
-```
-
-### Disciplina
+No TypeScript:
 
 ```text
 Disciplina
-├── id: number
-├── nome: string
-└── carga_horaria: number
+├── id
+├── nome
+└── cargaHoraria
 ```
-
-### Professor
-
-```text
-Professor
-├── id: number
-├── nome: string
-└── disciplina: string
-```
-
-O recurso de professores permanece utilizando dados em memória nesta etapa.
 
 ---
 
-## 36. Recurso Professores
+## 35. Baseline
 
-O recurso de professores permanece com:
+Como o banco de dados já existia antes da introdução do Prisma, foi utilizada uma **baseline**.
+
+A baseline informa ao Prisma que a estrutura atual do banco já existe e deve ser considerada o ponto inicial do histórico de migrations.
+
+Fluxo:
+
+```text
+Banco existente
+      ↓
+Baseline
+      ↓
+Prisma passa a controlar
+mudanças futuras
+```
+
+---
+
+## 36. Criando a Baseline
+
+Foi criada a pasta:
+
+```text
+prisma/migrations/0_init/
+```
+
+O SQL correspondente ao schema foi gerado com:
+
+```bash
+npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script > prisma/migrations/0_init/migration.sql
+```
+
+Estrutura:
+
+```text
+prisma/
+└── migrations/
+    └── 0_init/
+        └── migration.sql
+```
+
+---
+
+## 37. Registrando a Baseline
+
+Como as tabelas já existiam, a migration inicial não deveria ser executada novamente.
+
+Foi utilizada:
+
+```bash
+npx prisma migrate resolve --applied 0_init
+```
+
+Isso registra:
+
+```text
+0_init
+   ↓
+estrutura já existente
+   ↓
+migration considerada aplicada
+```
+
+---
+
+## 38. Introspection × Migration
+
+São operações diferentes.
+
+### Introspection
+
+```bash
+npx prisma db pull
+```
+
+Fluxo:
+
+```text
+Banco
+   ↓
+schema.prisma
+```
+
+É utilizada para descobrir uma estrutura que já existe no banco.
+
+### Migration
+
+```bash
+npx prisma migrate dev --name nome_da_migration
+```
+
+Fluxo:
+
+```text
+schema.prisma
+      ↓
+migration
+      ↓
+MySQL
+```
+
+É utilizada para criar e versionar alterações futuras.
+
+---
+
+## 39. Prisma Generate
+
+O comando:
+
+```bash
+npx prisma generate
+```
+
+faz:
+
+```text
+schema.prisma
+      ↓
+Prisma Client
+```
+
+Deve ser utilizado sempre que alterações relevantes forem feitas no schema.
+
+---
+
+## 40. Prisma Studio
+
+O Prisma fornece uma interface visual para visualizar e editar dados.
+
+Execute:
+
+```bash
+npx prisma studio
+```
+
+O Prisma Studio pode ser utilizado para:
+
+- visualizar registros;
+- inserir dados;
+- editar dados;
+- conferir alterações;
+- visualizar models;
+- auxiliar durante o desenvolvimento.
+
+---
+
+## 41. Principais Comandos Prisma
+
+### Inicializar Prisma
+
+```bash
+npx prisma init --datasource-provider mysql --output ../src/generated/prisma
+```
+
+### Introspecção
+
+```bash
+npx prisma db pull
+```
+
+### Gerar Prisma Client
+
+```bash
+npx prisma generate
+```
+
+### Prisma Studio
+
+```bash
+npx prisma studio
+```
+
+### Criar migration
+
+```bash
+npx prisma migrate dev --name nome_da_migration
+```
+
+### Consultar migrations
+
+```bash
+npx prisma migrate status
+```
+
+### Registrar baseline
+
+```bash
+npx prisma migrate resolve --applied 0_init
+```
+
+---
+
+## 42. db pull, generate e migrate
+
+É importante diferenciar:
+
+```text
+db pull
+Banco → Prisma Schema
+```
+
+```text
+generate
+Prisma Schema → Prisma Client
+```
+
+```text
+migrate
+Prisma Schema → Banco
+```
+
+Visualmente:
+
+```text
+                  db pull
+MySQL ─────────────────────────→ schema.prisma
+
+schema.prisma ─────────────────→ Prisma Client
+                  generate
+
+schema.prisma ─────────────────→ MySQL
+                  migrate
+```
+
+---
+
+## 43. Recurso Professores
+
+O recurso de professores permanece utilizando dados em memória:
 
 ```text
 ProfessoresController
@@ -1217,33 +1479,108 @@ Endpoints:
 
 | Método | Endpoint | Descrição |
 | ------ | -------- | --------- |
-| GET | `/professores` | Lista todos os professores |
-| GET | `/professores/:id` | Busca um professor pelo ID |
-| POST | `/professores` | Cadastra um novo professor |
-| PUT | `/professores/:id` | Atualiza um professor |
-| DELETE | `/professores/:id` | Exclui um professor |
+| GET | `/professores` | Lista professores |
+| GET | `/professores/:id` | Busca professor |
+| POST | `/professores` | Cadastra professor |
+| PUT | `/professores/:id` | Atualiza professor |
+| DELETE | `/professores/:id` | Exclui professor |
 
 ---
 
-## 37. Boas Práticas Aplicadas
+## 44. Benefícios da Separação em Camadas
+
+Uma das principais vantagens observadas durante a migração foi a separação de responsabilidades.
+
+O Controller não precisava conhecer:
+
+```text
+mysql2
+Prisma
+SQL
+```
+
+O Service também não precisava conhecer a tecnologia de persistência.
+
+Ele continuou dependendo de:
+
+```text
+Repository
+```
+
+Assim, foi possível trocar:
+
+```text
+SQL manual + mysql2
+```
+
+por:
+
+```text
+Prisma ORM
+```
+
+sem reescrever toda a aplicação.
+
+---
+
+## 45. Benefícios do Prisma
+
+O Prisma fornece integração forte com TypeScript.
+
+Entre os benefícios:
+
+- autocomplete;
+- verificação de tipos;
+- models tipados;
+- validação de campos durante o desenvolvimento;
+- redução de SQL manual;
+- migrations;
+- introspecção;
+- Prisma Studio;
+- melhor organização da camada de persistência.
+
+Exemplo:
+
+```ts
+this.prisma.aluno.create({
+  data: {
+    nome: 'Ana',
+    email: 'ana@email.com',
+    curso: 'ADS',
+  },
+});
+```
+
+O Prisma conhece os campos válidos do model `Aluno`.
+
+---
+
+## 46. Boas Práticas Aplicadas
 
 Nesta etapa foram aplicadas práticas como:
 
-- utilização de DTOs;
-- validação em tempo de execução;
-- separação das responsabilidades;
-- SQL concentrado nos Repositories;
+- utilização de ORM;
+- Repository Pattern;
+- injeção de dependência;
+- PrismaService compartilhado;
+- uma única instância do Prisma Client;
+- separação entre regras e persistência;
 - variáveis de ambiente;
 - não versionamento do `.env`;
-- queries parametrizadas;
-- tratamento de recursos inexistentes;
+- validação através de DTOs;
+- tratamento de erros;
 - códigos HTTP adequados;
-- injeção de dependência;
-- reutilização das regras através de `PartialType`.
+- paginação;
+- filtros;
+- pesquisa parcial;
+- introspecção;
+- migrations;
+- baseline;
+- mapeamento entre models e tabelas existentes.
 
 ---
 
-## 38. Fluxo Completo
+## 47. Fluxo Completo
 
 Para uma requisição como:
 
@@ -1266,18 +1603,28 @@ AlunosService
    ↓
 AlunosRepository
    ↓
-DatabaseService
+PrismaService
+   ↓
+Prisma Client
+   ↓
+Driver Adapter
    ↓
 MySQL
 ```
 
-Cada camada possui uma responsabilidade específica.
+A resposta percorre o caminho inverso até chegar ao cliente.
 
 ---
 
-## 39. Verificação do Projeto
+## 48. Verificação do Projeto
 
-Após a implementação dos DTOs, validações, tratamento de erros, `PATCH` e CRUD de disciplinas, foi realizada a compilação através de:
+Após a migração para Prisma ORM, foi executado:
+
+```bash
+npx prisma generate
+```
+
+E também:
 
 ```bash
 npm run build
@@ -1285,7 +1632,7 @@ npm run build
 
 O projeto compilou corretamente, sem erros.
 
-As principais rotas disponíveis nesta etapa são:
+As principais rotas continuam disponíveis:
 
 ```text
 GET     /alunos
@@ -1302,11 +1649,19 @@ PUT     /disciplinas/:id
 DELETE  /disciplinas/:id
 ```
 
+Também foram adicionadas consultas como:
+
+```text
+GET /alunos?curso=ADS
+GET /alunos?nome=Ana
+GET /alunos?page=1&limit=10
+```
+
 ---
 
-## 40. Evolução da Arquitetura
+## 49. Evolução da Arquitetura
 
-Na primeira etapa:
+### Primeira etapa
 
 ```text
 Controller
@@ -1316,7 +1671,7 @@ Service
 Memória
 ```
 
-Depois:
+### Persistência com MySQL
 
 ```text
 Controller
@@ -1327,81 +1682,110 @@ Repository
     ↓
 DatabaseService
     ↓
+mysql2
+    ↓
 MySQL
 ```
 
-Nesta etapa:
+### Validação
 
 ```text
-Request
-   ↓
-Pipes
-   ↓
+ValidationPipe
+    ↓
 DTO
-   ↓
+    ↓
 Controller
-   ↓
+    ↓
 Service
-   ↓
+    ↓
 Repository
-   ↓
+    ↓
 DatabaseService
-   ↓
+    ↓
 MySQL
 ```
 
-A aplicação passou a validar os dados antes de executar as regras da aplicação e acessar o banco.
+### Prisma ORM
+
+```text
+ValidationPipe
+    ↓
+DTO
+    ↓
+Controller
+    ↓
+Service
+    ↓
+Repository
+    ↓
+PrismaService
+    ↓
+Prisma Client
+    ↓
+Driver Adapter
+    ↓
+MySQL
+```
 
 ---
 
-## 41. Recursos Implementados Nesta Etapa
+## 50. Recursos Implementados Nesta Etapa
 
 Nesta branch foram implementados:
 
-- DTOs;
-- `CreateAlunoDto`;
-- `UpdateAlunoDto`;
-- `PatchAlunoDto`;
-- `CreateDisciplinaDto`;
-- `UpdateDisciplinaDto`;
-- `class-validator`;
-- `class-transformer`;
-- `ValidationPipe`;
-- Validação global;
-- `whitelist`;
-- `transform`;
-- Validação de e-mail;
-- `@IsEmail()`;
-- `@IsString()`;
-- `@IsNotEmpty()`;
-- `@MaxLength()`;
-- `@IsInt()`;
-- `@Min()`;
-- `ParseIntPipe`;
-- `NotFoundException`;
-- Tratamento de `400 Bad Request`;
-- Tratamento de `404 Not Found`;
-- Retorno de `201 Created`;
-- Retorno de `204 No Content`;
-- `PATCH`;
-- `PartialType`;
-- CRUD de disciplinas;
-- Persistência de disciplinas em MySQL;
-- Separação entre Controller, Service, Repository e DatabaseService.
+- Prisma ORM 7;
+- Prisma Client;
+- Prisma CLI;
+- `@prisma/client`;
+- `@prisma/adapter-mariadb`;
+- `dotenv`;
+- ESM;
+- `schema.prisma`;
+- `prisma.config.ts`;
+- `PrismaService`;
+- `PrismaModule`;
+- Prisma Client gerado;
+- `prisma db pull`;
+- introspecção;
+- `prisma generate`;
+- models Prisma;
+- `@@map()`;
+- `@map()`;
+- migração de `AlunosRepository` para Prisma;
+- migração de `DisciplinasRepository` para Prisma;
+- remoção de `DatabaseModule`;
+- remoção de `DatabaseService`;
+- remoção do `mysql2`;
+- `findMany()`;
+- `findUnique()`;
+- `create()`;
+- `update()`;
+- `delete()`;
+- filtro por curso;
+- pesquisa por nome com `contains`;
+- paginação com `skip` e `take`;
+- baseline;
+- migrations;
+- Prisma Studio;
+- encerramento através de `$disconnect()`;
+- manutenção de DTOs;
+- manutenção de ValidationPipe;
+- manutenção do tratamento de erros;
+- manutenção das rotas HTTP existentes.
 
 ---
 
-## 42. Versionamento e Organização das Branches
+## 51. Versionamento e Organização das Branches
 
 O projeto utiliza branches para separar as atividades desenvolvidas durante as aulas.
 
 A atividade desta etapa foi desenvolvida na branch:
 
 ```text
-branch_20260929
+branch_20260929_prisma
 ```
 
-Ela representa uma evolução das branches anteriores:
+Ela representa a última evolução desta sequência:
 
 ```text
 branch_20260922
@@ -1409,11 +1793,13 @@ branch_20260922
 branch_20260925_extra
         ↓
 branch_20260929
+        ↓
+branch_20260929_prisma
 ```
 
 ### `branch_20260922`
 
-Implementação inicial com:
+Implementação inicial:
 
 ```text
 Controller
@@ -1429,7 +1815,7 @@ Adição de:
 MySQL
 Repository
 DatabaseService
-Pool de conexões
+Pool
 Campo email
 ```
 
@@ -1442,19 +1828,45 @@ DTOs
 ValidationPipe
 class-validator
 class-transformer
-validação de email
 NotFoundException
-códigos HTTP
 PATCH
 PartialType
 CRUD de disciplinas
+```
+
+### `branch_20260929_prisma`
+
+Migração da persistência:
+
+```text
+mysql2 + SQL manual
+        ↓
+Prisma ORM
+```
+
+Com:
+
+```text
+PrismaService
+PrismaModule
+Prisma Client
+Driver Adapter
+schema.prisma
+db pull
+generate
+migrations
+baseline
+Prisma Studio
+filtros
+pesquisa
+paginação
 ```
 
 O desenvolvimento utiliza **Git** para controle de versão e **GitHub** como repositório remoto.
 
 ---
 
-## 43. Autor
+## 52. Autor
 
 **Nome:** Matheus Ribeiro Saraiva  
 **Unidade Curricular:** Programação Web 2  
@@ -1466,7 +1878,7 @@ https://github.com/matheus-ribeiro021
 
 ---
 
-## 44. Licença e Uso Acadêmico
+## 53. Licença e Uso Acadêmico
 
 Projeto desenvolvido para fins acadêmicos na Unidade Curricular de **Programação Web 2 — Senac RJ**.
 

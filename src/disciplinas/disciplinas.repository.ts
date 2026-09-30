@@ -1,112 +1,68 @@
-import { Injectable } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service.js';
+import {
+  Injectable,
+} from '@nestjs/common';
+
+import {
+  PrismaService,
+} from '../prisma/prisma.service.js';
 
 @Injectable()
 export class DisciplinasRepository {
   constructor(
-    private readonly databaseService:
-      DatabaseService,
+    private readonly prisma:
+      PrismaService,
   ) {}
 
-  async findAll() {
-    const pool =
-      this.databaseService.getPool();
-
-    const [rows] =
-      await pool.query(
-        `
-        SELECT
-          id,
-          nome,
-          carga_horaria
-        FROM disciplinas
-        `,
-      );
-
-    return rows;
+  findAll() {
+    return this.prisma.disciplina.findMany({
+      orderBy: {
+        id: 'asc',
+      },
+    });
   }
 
-  async findById(id: number) {
-    const pool =
-      this.databaseService.getPool();
-
-    const [rows]: any =
-      await pool.query(
-        `
-        SELECT
-          id,
-          nome,
-          carga_horaria
-        FROM disciplinas
-        WHERE id = ?
-        `,
-        [id],
-      );
-
-    return rows[0];
+  findById(id: number) {
+    return this.prisma.disciplina.findUnique({
+      where: {
+        id,
+      },
+    });
   }
 
-  async create(
+  create(
     nome: string,
-    carga_horaria: number,
+    cargaHoraria: number,
   ) {
-    const pool =
-      this.databaseService.getPool();
-
-    const [result]: any =
-      await pool.query(
-        `
-        INSERT INTO disciplinas (
-          nome,
-          carga_horaria
-        )
-        VALUES (?, ?)
-        `,
-        [
-          nome,
-          carga_horaria,
-        ],
-      );
-
-    return this.findById(
-      result.insertId,
-    );
+    return this.prisma.disciplina.create({
+      data: {
+        nome,
+        cargaHoraria,
+      },
+    });
   }
 
-  async update(
+  update(
     id: number,
     nome: string,
-    carga_horaria: number,
+    cargaHoraria: number,
   ) {
-    const pool =
-      this.databaseService.getPool();
-
-    await pool.query(
-      `
-      UPDATE disciplinas
-      SET
-        nome = ?,
-        carga_horaria = ?
-      WHERE id = ?
-      `,
-      [
-        nome,
-        carga_horaria,
+    return this.prisma.disciplina.update({
+      where: {
         id,
-      ],
-    );
+      },
+
+      data: {
+        nome,
+        cargaHoraria,
+      },
+    });
   }
 
-  async delete(id: number) {
-    const pool =
-      this.databaseService.getPool();
-
-    await pool.query(
-      `
-      DELETE FROM disciplinas
-      WHERE id = ?
-      `,
-      [id],
-    );
+  delete(id: number) {
+    return this.prisma.disciplina.delete({
+      where: {
+        id,
+      },
+    });
   }
 }

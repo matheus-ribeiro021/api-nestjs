@@ -10,43 +10,81 @@ import {
   Patch,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 
-import { AlunosService } from './alunos.service.js';
+import {
+  AlunosService,
+} from './alunos.service.js';
 
-import { CreateAlunoDto } from './dto/create-aluno.dto.js';
-import { UpdateAlunoDto } from './dto/update-aluno.dto.js';
-import { PatchAlunoDto } from './dto/patch-aluno.dto.js';
+import {
+  CreateAlunoDto,
+} from './dto/create-aluno.dto.js';
+
+import {
+  UpdateAlunoDto,
+} from './dto/update-aluno.dto.js';
+
+import {
+  PatchAlunoDto,
+} from './dto/patch-aluno.dto.js';
 
 @Controller('alunos')
 export class AlunosController {
   constructor(
-    private readonly alunosService: AlunosService,
+    private readonly alunosService:
+      AlunosService,
   ) {}
 
   @Get()
-  findAll() {
-    return this.alunosService.findAll();
+  findAll(
+    @Query('curso')
+    curso?: string,
+
+    @Query('nome')
+    nome?: string,
+
+    @Query('page')
+    page?: string,
+
+    @Query('limit')
+    limit?: string,
+  ) {
+    return this.alunosService.findAll(
+      curso,
+      nome,
+      page ? Number(page) : 1,
+      limit ? Number(limit) : 10,
+    );
   }
 
   @Get(':id')
   findById(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe)
+    id: number,
   ) {
-    return this.alunosService.findById(id);
+    return this.alunosService.findById(
+      id,
+    );
   }
 
   @Post()
   create(
-    @Body() data: CreateAlunoDto,
+    @Body()
+    data: CreateAlunoDto,
   ) {
-    return this.alunosService.create(data);
+    return this.alunosService.create(
+      data,
+    );
   }
 
   @Put(':id')
   update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() data: UpdateAlunoDto,
+    @Param('id', ParseIntPipe)
+    id: number,
+
+    @Body()
+    data: UpdateAlunoDto,
   ) {
     return this.alunosService.update(
       id,
@@ -56,8 +94,11 @@ export class AlunosController {
 
   @Patch(':id')
   patch(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() data: PatchAlunoDto,
+    @Param('id', ParseIntPipe)
+    id: number,
+
+    @Body()
+    data: PatchAlunoDto,
   ) {
     return this.alunosService.patch(
       id,
@@ -68,8 +109,11 @@ export class AlunosController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe)
+    id: number,
   ) {
-    await this.alunosService.delete(id);
+    await this.alunosService.delete(
+      id,
+    );
   }
 }
